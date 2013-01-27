@@ -21,23 +21,26 @@
 class ARPEntry
   include Trema::Logger
 
+  attr_reader :segment
+  attr_reader :ipaddr
   attr_reader :port
   attr_reader :hwaddr
   attr_writer :age_max
 
 
-  def initialize(port, hwaddr, age_max)
+  def initialize(segment, ipaddr, hwaddr, port, age_max)
+    @segment = segment
+    @ipaddr = IPAddr.new(ipaddr)
+    @hwaddr = Mac.new(hwaddr)
     @port = port
-    @hwaddr = hwaddr
     @age_max = age_max
     @last_updated = Time.now
     info "[ARPEntry::initialize] New entry: MAC addr=#{ @hwaddr.to_s }, port=#{ @port }"
   end
 
 
-  def update(port, hwaddr)
+  def update(port)
     @port = port
-    @hwaddr = hwaddr
     @last_updated = Time.now
     info "[ARPEntry::update] Update entry: MAC addr=#{ @hwaddr.to_s }, port=#{ @port }"
   end
@@ -48,6 +51,13 @@ class ARPEntry
     info "[ARPEntry::aged_out?] Age out: An ARP entry (MAC address = #{ @hwaddr.to_s }, port number = #{ @port }) has been aged-out" if aged_out
     aged_out
   end
+
+
+  def dump
+    puts "#{@segment}, #{@ipaddr}, #{@hwaddr}, #{@port}, #{@last_updated}"
+  end
+
+
 end
 
 
@@ -58,46 +68,55 @@ class ARPTable
 
   def initialize
     info "[ARPTable::initialize]"
-    @db = {}
+    @db = []
   end
 
-
-  def update(port, ipaddr, hwaddr)
+  def update(segment, ipaddr, hwaddr, port)
     info "[ARPTable::update] port=#{ port }, ipaddr=#{ ipaddr.to_s }, hwaddr=#{ hwaddr.to_s }"
 
-    entry = @db[ipaddr.to_s]
+    entry = lookup_by_segment_and_ipaddr(segment, ipaddr)
     if entry
-      entry.update(port, hwaddr)
+      puts "update: find entry"
+      entry.update(port)
     else
-      new_entry = ARPEntry.new(port, hwaddr, DEFAULT_AGE_MAX)
-      @db[ipaddr.to_s] = new_entry
+      puts "update: not found, and generate new entry"
+      new_entry = ARPEntry.new(
+        segment, ipaddr.to_s, hwaddr.to_s, port, DEFAULT_AGE_MAX)
+      @db << new_entry
     end
   end
 
 
-  def lookup_by_ipaddr(ipaddr)
-    @db[ipaddr.to_s]
+  def lookup_by_segment_and_ipaddr(segment, ipaddr)
+    info "[ARPTable::lookup_by_segment_and_ipaddr]"
+    puts "lookup_by_segment_and_ipaddr: #{segment}, #{ipaddr}"
+
+    @db.find do |each|
+      each.ipaddr.to_s == ipaddr.to_s && each.segment == segment
+    end
   end
 
 
-  def lookup_by_hwaddr(hwaddr)
-    @db.each_value { |each| return each if each.hwaddr == hwaddr }
-    nil
+  def lookup_by_segment_and_hwaddr(segment, hwaddr)
+    info "[ARPTable::lookup_by_segment_and_hwaddr]"
+    puts "lookup_by_segment_and_hwaddr: #{segment}, #{hwaddr}"
+
+    @db.find do |each|
+      each.hwaddr == hwaddr && each.segment == segment
+    end
   end
 
 
   def age
-    @db.delete_if { |ipaddr, entry| entry.aged_out? }
+    @db.delete_if { |each| each.aged_out? }
   end
 
 
   def dump
     puts "[ARPTable::dump]"
-
-    @db.each do |ipaddr, entry|
-      puts "#{ ipaddr.to_s } > #{ entry.port }, #{ entry.hwaddr.to_s }"
-    end
+    @db.each { |each| each.dump }
   end
+
 
 end
 

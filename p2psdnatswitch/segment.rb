@@ -30,10 +30,10 @@ class Segments
 
 
   def include(port_name)
-    info "[Segments::name_includes] search by #{ port_name }"
+    #info "[Segments::name_includes] search by #{ port_name }"
 
     @db.each do |name, port_list|
-      puts "name_includes: port_list: #{ port_list.join(',') }"
+      #puts "name_includes: port_list: #{ port_list.join(',') }"
       return name if port_list.include?(port_name)
     end
     nil

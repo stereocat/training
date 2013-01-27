@@ -59,17 +59,16 @@ class NatTable
   end
 
 
-  def find_by_virt_ipaddr(ipaddr)
-    puts "find_by_virt_ipaddr: #{ ipaddr }"
+  def find_by_segment_and_vipaddr(segment, ipaddr)
+    puts "find_by_segment_and_vipaddr: #{ segment }, #{ ipaddr }"
 
     local = counter = nil
-
     @table.each do |each|
-      if each[:lhs].virt_ipaddr == ipaddr
+      if each[:lhs].virt_ipaddr == ipaddr && each[:lhs].segment == segment
         local = each[:lhs]
         counter = each[:rhs]
         break
-      elsif each[:rhs].virt_ipaddr == ipaddr
+      elsif each[:rhs].virt_ipaddr == ipaddr && each[:rhs].segment == segment
         local = each[:rhs]
         counter = each[:lhs]
         break
@@ -77,23 +76,26 @@ class NatTable
     end
 
     if local || counter
+      puts "find_by_segment_and_vipaddr: FOUND"
       { :local => local, :counter => counter }
     else
       # not found
+      puts "find_by_segment_and_vipaddr: NOT FOUND"
       nil
     end
   end
 
 
-  def find_by_virt_hwaddr(hwaddr)
-    local = counter = nil
+  def find_by_segment_and_vhwaddr(segment, hwaddr)
+    puts "find_by_segment_and_vhwaddr: #{ segment }, #{ hwaddr }"
 
+    local = counter = nil
     @table.each do |each|
-      if each[:lhs].virt_hwaddr == hwaddr
+      if each[:lhs].virt_hwaddr == hwaddr && each[:lhs].segment == segment
         local = each[:lhs]
         counter = each[:rhs]
         break
-      elsif each[:rhs].virt_hwaddr == hwaddr
+      elsif each[:rhs].virt_hwaddr == hwaddr && each[:rhs].segment == segment
         local = each[:rhs]
         counter = each[:lhs]
         break
@@ -101,8 +103,10 @@ class NatTable
     end
 
     if local || counter
+      puts "find_by_segment_and_vhwaddr: FOUND"
       { :local => local, :counter => counter }
     else
+      puts "find_by_segment_and_vhwaddr: NOT FOUND"
       # not found
       nil
     end

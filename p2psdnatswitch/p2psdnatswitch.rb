@@ -1,4 +1,8 @@
 #
+# A router implementation in Trema
+#
+# Copyright (C) 2012 NEC Corporation
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2, as
 # published by the Free Software Foundation.
@@ -64,15 +68,20 @@ class P2PSrcDstNatSwitch < Controller
 
     if to_me?(message)
       if message.arp_request?
+        puts "packet_in: arp_request"
         handle_arp_request datapath_id, message
       elsif message.arp_reply?
+        puts "packet_in: arp_reply"
         handle_arp_reply message
       elsif message.ipv4?
+        puts "packet_in: ipv4"
         handle_ipv4 datapath_id, message
       else
+        puts "packet_in: no_op"
         # noop
       end
     else
+      puts "packet_in: NOT to_me?"
       # forwarding local
       handle_switched_traffic datapath_id, message
     end
@@ -104,7 +113,8 @@ class P2PSrcDstNatSwitch < Controller
 
     port = message.in_port
     daddr = message.arp_tpa
-    nat_record = @nat_table.find_by_virt_ipaddr(daddr)
+    segment = segment_name_of port
+    nat_record = @nat_table.find_by_segment_and_vipaddr(segment, daddr)
 
     puts "handle_arp_request: port:#{ port }, daddr:#{ daddr }"
 
@@ -121,22 +131,24 @@ class P2PSrcDstNatSwitch < Controller
 
   def handle_arp_reply(message)
     info "[P2PSrcDstNatSwitch::handle_arp_reply]"
-    @arp_table.update message.in_port, message.arp_spa, message.arp_sha
+    segment = segment_name_of message.in_port
+    @arp_table.update(
+      segment, message.arp_spa, message.arp_sha, message.in_port)
   end
 
 
   def handle_ipv4(dpid, message)
     info "[P2PSrcDstNatSwitch::handle_ipv4]"
-    puts "handle_ipv4: from #{message.ipv4_saddr} to #{message.ipv4_daddr}"
 
-    # make NAT
-    nat_record = @nat_table.find_by_virt_ipaddr(message.ipv4_daddr)
+    segment = segment_name_of message.in_port
+    puts "handle_ipv4: #{segment} from #{message.ipv4_saddr} to #{message.ipv4_daddr}"
+    nat_record = @nat_table.find_by_segment_and_vipaddr(segment, message.ipv4_daddr)
 
     if nat_record
       nrc = nat_record[:counter]
 
       # to get real hwaddr and port (counter/real)
-      arp_entry = @arp_table.lookup_by_ipaddr(nrc.real_ipaddr)
+      arp_entry = @arp_table.lookup_by_segment_and_ipaddr(nrc.segment, nrc.real_ipaddr)
 
       if arp_entry
         actions = [
@@ -170,16 +182,19 @@ class P2PSrcDstNatSwitch < Controller
   def handle_switched_traffic(datapath_id, message)
     info "[P2PSrcDstNatSwitch::handle_switched_traffic]"
 
+    segment = segment_name_of message.in_port
     if message.arp?
-      @arp_table.update message.in_port, message.arp_spa, message.arp_sha
+      @arp_table.update(
+        segment, message.arp_spa, message.arp_sha, message.in_port)
     elsif message.ipv4?
-      @arp_table.update message.in_port, message.ipv4_saddr, message.macsa
+      @arp_table.update(
+        segment, message.ipv4_saddr, message.macsa, message.in_port)
     end
 
     # debug
     @arp_table.dump
 
-    arp_entry = @arp_table.lookup_by_hwaddr(message.macda)
+    arp_entry = @arp_table.lookup_by_segment_and_hwaddr(segment, message.macda)
     if arp_entry
       flow_mod datapath_id, message, SendOutPort.new(arp_entry.port)
       packet_out datapath_id, message.data, SendOutPort.new(arp_entry.port)
@@ -188,18 +203,24 @@ class P2PSrcDstNatSwitch < Controller
       flood_to_segment(
         datapath_id,
         message.data,
-        @segments.include(@port_name_of[message.in_port]),
+        segment_name_of(message.in_port),
         message.in_port
       )
     end
   end
 
 
+  def segment_name_of(port_number)
+    @segments.include(@port_name_of[port_number])
+  end
+
+
   def to_me?(message)
-    if message.macda.broadcast? ||
-        @nat_table.find_by_virt_hwaddr(message.macda)
-      return true
-    end
+    segment = segment_name_of message.in_port
+    puts "to_me?: #{segment}/#{message.macda}"
+    nat_record = @nat_table.find_by_segment_and_vhwaddr(segment, message.macda)
+
+    (message.macda.broadcast? || nat_record) ? true : nil
   end
 
 

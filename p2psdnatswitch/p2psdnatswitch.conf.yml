@@ -21,28 +21,42 @@
 - lhs:
     segment: "network1"
     real:
-      ipaddr: "192.168.11.126"
+      ipaddr: "192.168.11.90"
     virtual:
-      hwaddr: "54:52:00:f1:00:02"
-      ipaddr: "192.168.11.80"
+      hwaddr: "54:52:00:13:00:05"
+      ipaddr: "192.168.11.85"
   rhs:
-    segment: "network2"
+    segment: "network3"
     real:
-      ipaddr: "10.0.2.2"
+      ipaddr: "192.168.11.91"
     virtual:
-      hwaddr: "54:52:00:f2:00:01"
-      ipaddr: "10.0.2.80"
+      hwaddr: "54:52:00:31:00:01"
+      ipaddr: "192.168.11.81"
 - lhs:
     segment: "network3"
     real:
-      ipaddr: "10.0.3.4"
+      ipaddr: "192.168.11.91"
     virtual:
-      ipaddr: "10.0.3.80"
-      hwaddr: "54:52:00:f3:00:01"
+      ipaddr: "192.168.11.83"
+      hwaddr: "54:52:00:32:00:03"
+  rhs:
+    segment: "network2"
+    real:
+      ipaddr: "192.168.11.91"
+    virtual:
+      ipaddr: "192.168.11.85"
+      hwaddr: "54:52:00:23:00:05"
+- lhs:
+    segment: "network2"
+    real:
+      ipaddr: "192.168.11.90"
+    virtual:
+      ipaddr: "192.168.11.81"
+      hwaddr: "54:52:00:21:00:01"
   rhs:
     segment: "network1"
     real:
-      ipaddr: "192.168.11.126"
+      ipaddr: "192.168.11.90"
     virtual:
-      ipaddr: "192.168.11.81"
-      hwaddr: "54:52:00:f1:00:04"
+      ipaddr: "192.168.11.82"
+      hwaddr: "54:52:00:12:00:02"
