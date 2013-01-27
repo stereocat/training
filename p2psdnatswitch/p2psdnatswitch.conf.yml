@@ -1,0 +1,48 @@
+# -*- coding: utf-8 -*-
+:segment:
+- :name: "network1"
+  :ports:
+    - "eth1"
+    - "br0"
+    - "vnet0"
+- :name: "network2"
+  :ports:
+    - "vnet1"
+    - "vnet2"
+- :name: "network3"
+  :ports:
+    - "vnet3"
+    - "vnet4"
+- :name: "network4"
+  :ports:
+    - "vnet5"
+    - "vnet6"
+:nat_table:
+- lhs:
+    segment: "network1"
+    real:
+      ipaddr: "192.168.11.126"
+    virtual:
+      hwaddr: "54:52:00:f1:00:02"
+      ipaddr: "192.168.11.80"
+  rhs:
+    segment: "network2"
+    real:
+      ipaddr: "10.0.2.2"
+    virtual:
+      hwaddr: "54:52:00:f2:00:01"
+      ipaddr: "10.0.2.80"
+- lhs:
+    segment: "network3"
+    real:
+      ipaddr: "10.0.3.4"
+    virtual:
+      ipaddr: "10.0.3.80"
+      hwaddr: "54:52:00:f3:00:01"
+  rhs:
+    segment: "network1"
+    real:
+      ipaddr: "192.168.11.126"
+    virtual:
+      ipaddr: "192.168.11.81"
+      hwaddr: "54:52:00:f1:00:04"
