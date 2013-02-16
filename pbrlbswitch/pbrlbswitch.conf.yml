@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+:segment:
+- :name: "network1"
+  :ports:
+    - "eth1"
+    - "br0"
+    - "vnet0"
+    - "vnet1"
+- :name: "network2"
+  :ports:
+    - "vnet2"
+    - "vnet3"
+    - "vnet4"
+    - "vnet5"
+    - "vnet6"
+:interface:
+- :hwaddr: "00:00:00:01:00:01"
+  :ipaddr: "192.168.11.3"
+  :masklen: 24
+  :segment: "network1"
+- :hwaddr: "00:00:00:01:00:99"
+  :ipaddr: "192.168.11.99"
+  :masklen: 24
+  :segment: "network1"
+  :vserver: true
+- :hwaddr: "00:00:00:02:00:01"
+  :ipaddr: "10.0.2.254"
+  :masklen: 24
+  :segment: "network2"
+:route:
+- :destination: "0.0.0.0"
+  :masklen: 0
+  :nexthop: "192.168.11.1"
+:pbrlb:
+  :vserver:
+    :ipaddr: "192.168.11.99"
+    :tcp_port: 80
+  :rservers:
+    - :ipaddr: "10.0.2.3"
+      :tcp_port: 80
+    - :ipaddr: "10.0.2.4"
+      :tcp_port: 80
+    - :ipaddr: "10.0.2.5"
+      :tcp_port: 80
+  :dsr: true
+
