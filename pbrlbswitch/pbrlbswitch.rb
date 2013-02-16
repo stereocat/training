@@ -132,8 +132,8 @@ class PbrLbSwitch < Controller
   def handle_ipv4(dpid, message)
     info "[PbrLbSwitch::handle_ipv4]"
 
-    if should_pbslb?(message)
-      handle_pbrslb_request dpid, message
+    if should_pbrlb?(message)
+      handle_pbrlb_request dpid, message
     elsif should_forward?(message)
       forward dpid, message
     elsif message.icmpv4_echo_request?
@@ -144,11 +144,11 @@ class PbrLbSwitch < Controller
   end
 
 
-  def should_pbslb?(message)
-    info "[PbrLbSwitch::should_slb?]"
+  def should_pbrlb?(message)
+    info "[PbrLbSwitch::should_pbrlb?]"
 
     vsvr = @lb_table.vserver
-    puts "should_slb?: msg: to;#{message.ipv4_daddr}/#{message.tcp_dst_port}"
+    puts "should_pbrlb?: msg: to;#{message.ipv4_daddr}/#{message.tcp_dst_port}"
 
     if message.ipv4_daddr.to_a == vsvr.ipaddr.to_a &&
         message.tcp? &&
@@ -158,15 +158,15 @@ class PbrLbSwitch < Controller
   end
 
 
-  def handle_pbrslb_request(dpid, message)
-    info "[PbrLbSwitch::handle_pbrslb_request]"
+  def handle_pbrlb_request(dpid, message)
+    info "[PbrLbSwitch::handle_pbrlb_request]"
 
     rserver = @lb_table.balance_rserver(message.tcp_src_port)
     arp_entry = @arp_table.lookup_by_ipaddr(rserver.ipaddr)
 
     interface = @interfaces.find_by_prefix(rserver.ipaddr)
     if not interface
-      info "handle_pbrslb_request: not found interface for #{ rserver.ipaddr }"
+      info "handle_pbrlb_request: not found interface for #{ rserver.ipaddr }"
       return
     end
 
