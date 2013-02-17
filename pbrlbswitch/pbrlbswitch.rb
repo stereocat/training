@@ -111,8 +111,10 @@ class PbrLbSwitch < Controller
 
     port = message.in_port
     daddr = message.arp_tpa
-    interface = @interfaces.find_by_ipaddr(daddr)
 
+    @arp_table.update port, message.arp_spa, message.arp_sha
+
+    interface = @interfaces.find_by_ipaddr(daddr)
     if interface
       info "handle_arp_request: port:#{ port }, daddr:#{ daddr }, interface:#{ interface.segment }"
       arp_reply = create_arp_reply_from message, interface.hwaddr
@@ -134,6 +136,8 @@ class PbrLbSwitch < Controller
 
     if should_pbrlb?(message)
       handle_pbrlb_request dpid, message
+    elsif pbrlb_reply?(message)
+      handle_pbrlb_reply dpid, message
     elsif should_forward?(message)
       forward dpid, message
     elsif message.icmpv4_echo_request?
@@ -182,6 +186,41 @@ class PbrLbSwitch < Controller
     else
       rsvr = rserver.ipaddr
       handle_unresolved_packet dpid, message, interface, rsvr
+    end
+  end
+
+
+  def pbrlb_reply?(message)
+    info "[PbrLbSwitch::pbrlb_reply?]"
+    ## now this method can handle only DSR PBRLB
+
+    vsvr = @lb_table.vserver
+    if message.ipv4_saddr.to_a == vsvr.ipaddr.to_a &&
+        message.tcp? &&
+        message.tcp_src_port == vsvr.tcp_port
+      return true
+    end
+  end
+
+
+  def handle_pbrlb_reply(dpid, message)
+    info "[PbrLbSwitch::handle_pbrlb_reply]"
+
+    arp_entry = @arp_table.lookup_by_ipaddr(message.ipv4_daddr)
+    if arp_entry
+      src_interface = @interfaces.find_by_ipaddr(message.ipv4_saddr)
+      actions = [
+        SetEthSrcAddr.new(src_interface.hwaddr.to_s),
+        SetEthDstAddr.new(arp_entry.hwaddr.to_s),
+        SendOutPort.new(arp_entry.port)
+      ]
+      flow_mod dpid, message, actions
+      packet_out dpid, message.data, actions
+    else
+      # when load-balanced reply comes, it already resolved hwaddr of
+      # client/server each other.
+      warn "handle_pbrlb_reply: Not found #{message.ipv4_daddr} entry in arp table, to PBRLB REPLY"
+      @arp_table.dump
     end
   end
 

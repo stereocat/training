@@ -49,6 +49,10 @@ class PbrLbTable
   end
 
 
+  def dsr?
+    @dsr
+  end
+
   def dump
     puts "[PbrLbTable::dump]"
 
