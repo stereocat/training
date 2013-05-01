@@ -21,11 +21,13 @@ class MyRoutingSwitch < Controller
     @command_line.parse( ARGV.dup )
     @topology = Topology.new( @command_line.view )
     @arp_table = ARPTable.new
+    @switch_ready = {}
   end
 
 
   def switch_ready dpid
     send_message dpid, FeaturesRequest.new
+    @switch_ready[dpid] = true
   end
 
 
@@ -38,6 +40,7 @@ class MyRoutingSwitch < Controller
 
   def switch_disconnected dpid
     @topology.delete_switch dpid
+    @switch_ready.delete(dpid)
   end
 
 
@@ -49,6 +52,11 @@ class MyRoutingSwitch < Controller
 
 
   def packet_in dpid, packet_in
+    unless @switch_ready[dpid]
+      # ignore packet_in until complete features request/reply
+      warn "Switch:#{dpid} does not ready"
+      return
+    end
 
     if packet_in.lldp?
       @topology.add_link_by dpid, packet_in
@@ -170,8 +178,9 @@ class MyRoutingSwitch < Controller
     Match.new(
       :dl_src => packet_in.macsa,
       :dl_dst => packet_in.macda,
-      :nw_src => packet_in.ipv4_saddr,
-      :nw_dst => packet_in.ipv4_daddr
+      :dl_type => packet_in.eth_type,
+      :nw_src => packet_in.ipv4_saddr.to_s,
+      :nw_dst => packet_in.ipv4_daddr.to_s
     )
   end
 

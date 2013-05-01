@@ -47,8 +47,8 @@ class Topology
   def add_port dpid, port
     @ports[ dpid ] += [ port ]
 
-    puts "# [add_port], dpid:#{dpid}"
-    puts "number:#{port.number}, name:#{port.name}"
+    # puts "# [add_port], dpid:#{dpid}"
+    # puts "number:#{port.number}, name:#{port.name}"
   end
 
 
@@ -65,8 +65,8 @@ class Topology
 
     if not @links.include?( link )
 
-      puts "# [add_link_by] not included link"
-      link.dump
+      # puts "# [add_link_by] not included link"
+      # link.dump
 
       @links << link
       @links.sort!

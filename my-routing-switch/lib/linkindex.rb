@@ -36,11 +36,11 @@ class LinkIndex
       # puts "  num:#{@switch_index[each.dpid1][each.port1][:link_obj].port1}"
     end
 
-    @switch_index.keys.each do |dpid|
+    @switch_index.each_key do |dpid|
       @switch_neighbor[dpid] = []
       @switch_endpoint[dpid] = []
 
-      @switch_index[dpid].keys.each do |port_number|
+      @switch_index[dpid].each_key do |port_number|
         if @switch_index[dpid][port_number][:link_obj]
           link = @switch_index[dpid][port_number][:link_obj]
           @switch_neighbor[dpid].push(link.dpid2)
@@ -54,7 +54,7 @@ class LinkIndex
   end
 
   def get_link dpid1, dpid2
-    @switch_index[dpid1].keys.each do |each|
+    @switch_index[dpid1].each_key do |each|
       if @switch_index[dpid1][each][:link_obj]
         link = @switch_index[dpid1][each][:link_obj]
         return link if link.dpid2 == dpid2
@@ -66,9 +66,9 @@ class LinkIndex
   def dump
     puts "[LinkIndex::dump]"
 
-    @switch_index.keys.each do |dpid|
+    @switch_index.each_key do |dpid|
       puts "dpid: #{dpid}"
-      @switch_index[dpid].keys.each do |each|
+      @switch_index[dpid].each_key do |each|
         port = @switch_index[dpid][each][:port_obj]
         link = @switch_index[dpid][each][:link_obj] ? @switch_index[dpid][each][:link_obj] : false
         puts "  port_number: #{each}"
