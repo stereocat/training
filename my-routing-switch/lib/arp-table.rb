@@ -42,13 +42,13 @@ class ARPEntry
     @port = port
     @hwaddr = hwaddr
     @last_updated = Time.now
-    info "[ARPEntry::update] Update entry: MAC addr=#{ @hwaddr.to_s }, port=#{ @port }"
+    info "[ARPEntry::update] Update entry: DPID=#{ @dpid }, MAC addr=#{ @hwaddr.to_s }, port=#{ @port }"
   end
 
 
   def aged_out?
     aged_out = Time.now - @last_updated > @age_max
-    info "[ARPEntry::aged_out?] Age out: An ARP entry (MAC address = #{ @hwaddr.to_s }, port number = #{ @port }) has been aged-out" if aged_out
+    info "[ARPEntry::aged_out?] Age out: An ARP entry (DPID=#{ @dpid }, MAC address = #{ @hwaddr.to_s }, port = #{ @port }) has been aged-out" if aged_out
     aged_out
   end
 end
@@ -66,7 +66,7 @@ class ARPTable
 
 
   def update(dpid, port, ipaddr, hwaddr)
-    info "[ARPTable::update] dpid=#{dpid}, port=#{ port }, ipaddr=#{ ipaddr.to_s }, hwaddr=#{ hwaddr.to_s }"
+    info "[ARPTable::update] DPID=#{ @dpid }, port=#{ port }, ipaddr=#{ ipaddr.to_s }, hwaddr=#{ hwaddr.to_s }"
 
     entry = @db[ipaddr.to_s]
     if entry

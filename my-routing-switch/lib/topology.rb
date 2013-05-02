@@ -117,7 +117,7 @@ class Topology
       puts "fixed_nodes    : #{fixed_nodes.join(", ")}"
 
       # search neighbors
-      neighbors = @linkindex.get_neighbors_of(now)
+      neighbors = @linkindex.neighbors_of(now)
       if neighbors
 
         # delete fixed nodes from neighbors

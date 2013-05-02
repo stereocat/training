@@ -1,16 +1,20 @@
 require "link"
 require "trema-extensions/port"
 
+
 class LinkIndex
+
   attr_reader :switch_index
   attr_reader :switch_neighbor
   attr_reader :switch_endpoint
+
 
   def initialize
     @switch_index = {}
     @switch_neighbor = {}
     @switch_endpoint = {}
   end
+
 
   def update topology
     puts "[LinkIndex::update]"
@@ -53,6 +57,7 @@ class LinkIndex
     dump
   end
 
+
   def get_link dpid1, dpid2
     @switch_index[dpid1].each_key do |each|
       if @switch_index[dpid1][each][:link_obj]
@@ -62,6 +67,7 @@ class LinkIndex
     end
     nil
   end
+
 
   def dump
     puts "[LinkIndex::dump]"
@@ -81,9 +87,11 @@ class LinkIndex
     end
   end
 
-  def get_neighbors_of dpid
-    return @switch_neighbor[dpid]
+
+  def neighbors_of dpid
+    @switch_neighbor[dpid]
   end
+
 
 end
 
