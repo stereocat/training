@@ -14,6 +14,11 @@ require "rspec"
 require "trema"
 
 
+def ps_entry_of name
+  `ps -ef | grep -w "#{ name } " | grep -v grep`
+end
+
+
 ### Local variables:
 ### mode: Ruby
 ### coding: utf-8-unix
