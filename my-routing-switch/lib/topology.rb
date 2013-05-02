@@ -105,16 +105,15 @@ class Topology
     # start node was fixed
     now = start
     cost_table[now] = 0
-    remined_nodes.delete(now)
-    fixed_nodes.push(now)
 
-    while remined_nodes.include?(goal)
+    while not remined_nodes.empty?
       ## check
       puts "---------------:--------------------------"
-      puts "cost_table     : #{cost_table.to_a.join(", ")}"
-      puts "before_node tbl: #{before_node_table.to_a.join(", ")}"
-      puts "remined_nodes  : #{remined_nodes.join(", ")}"
-      puts "fixed_nodes    : #{fixed_nodes.join(", ")}"
+      puts "now            : #{now}"
+      puts "cost_table     : {#{_pphash cost_table}}"
+      puts "before_node tbl: {#{_pphash before_node_table}}"
+      puts "remined_nodes  : [#{remined_nodes.join(", ")}]"
+      puts "fixed_nodes    : [#{fixed_nodes.join(", ")}]"
 
       # search neighbors
       neighbors = @linkindex.neighbors_of(now)
@@ -123,7 +122,7 @@ class Topology
         # delete fixed nodes from neighbors
         neighbors -= fixed_nodes
 
-        # remined nodes (not fixed nodes) cost calculation
+        # update cost of remined nodes (not fixed nodes)
         neighbors.each do |each|
           linkcost = cost_table[now] + @linkindex.get_link(now, each).cost
           if cost_table[each] > linkcost
@@ -132,10 +131,14 @@ class Topology
           end
         end
 
-        # search minimum cost neighbor
+        # fix current node (minimum cost in remined_nodes)
+        remined_nodes.delete(now)
+        fixed_nodes.push(now)
+
+        # search minimum cost in remined_nodes and set next 'now'
         min_cost = INFINITY_LINK_COST
         min_node = nil
-        neighbors.each do |each|
+        remined_nodes.each do |each|
           if min_cost >= cost_table[each]
             min_cost = cost_table[each]
             min_node = each
@@ -143,15 +146,14 @@ class Topology
         end
 
         ## check
-        puts "neighbors      : #{neighbors.join(", ")}"
-        puts "next cost tbl  : #{cost_table.to_a.join(", ")}"
-        puts "min_neighbor   : #{min_node} (cost: #{min_cost})"
+        puts "neighbors      : [#{neighbors.join(", ")}]"
+        puts "next cost tbl  : {#{_pphash cost_table}}"
+        puts "fixed node     : #{now} (cost: #{cost_table[now]})"
+        puts "next node      : #{min_node} (cost: #{min_cost})"
 
-        # fix minimum cost neighbor
-        remined_nodes.delete(min_node)
-        fixed_nodes.push(min_node)
         now = min_node
       else
+        warn "DPID:#{now}: Stand Alone Switch?"
         break
       end
     end
@@ -173,6 +175,14 @@ class Topology
       end
     end
     notify_observers self
+  end
+
+
+  # pretty-print of hash
+  def _pphash hash
+    str = ""
+    hash.each_pair { |k,v| str = str + "#{k} => #{v}, " }
+    return str
   end
 
 end
