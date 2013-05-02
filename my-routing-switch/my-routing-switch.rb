@@ -31,6 +31,8 @@ class MyRoutingSwitch < Controller
 
   def switch_ready dpid
     send_message dpid, FeaturesRequest.new
+    send_drop_flow_mod dpid, "169.254.0.0/16"
+    send_drop_flow_mod dpid, "224.0.0.0/24"
   end
 
 
@@ -161,13 +163,6 @@ class MyRoutingSwitch < Controller
 
 
   def handle_ipv4 dpid, packet_in
-    case packet_in.ipv4_saddr.to_s
-    when /169.254.\d+.\d+/
-      return # ignore link local address: 169.254.0.0/16
-    when /224.0.0.\d+/
-      return # ignore IPv4 Multicast address: 224.0.0.0/24
-    end
-
     puts "[MyRoutingSwitch::handle_ipv4]"
 
     update_arp_table dpid, packet_in
@@ -230,11 +225,23 @@ class MyRoutingSwitch < Controller
   def flow_mod dpid, match, actions
     send_flow_mod_add(
       dpid,
+      :idle_timeout => 300,
       :match => match,
       :actions => actions
     )
   end
 
+
+  def send_drop_flow_mod dpid, nw_src
+    send_flow_mod_add(
+      dpid,
+      :idle_timeout => 0,
+      :match => Match.new(
+        :dl_type => 0x0800,
+        :nw_src => nw_src
+      )
+    )
+  end
 
   def packet_out dpid, data, actions
     send_packet_out(
