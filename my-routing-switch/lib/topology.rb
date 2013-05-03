@@ -90,75 +90,62 @@ class Topology
     puts "[get_path], start:#{start}, goal:#{goal}"
 
     # start/goal are dpid
-    cost_table = {}
-    before_node_table = {}
-    remined_nodes = []
-    fixed_nodes = []
+    dist = {}
+    pred = {}
+    remains = []
 
     # initialize
-    @ports.keys.each do | dpid |
-      cost_table[dpid] = INFINITY_LINK_COST
-      before_node_table[dpid] = nil
-      remined_nodes.push(dpid)
+    @ports.each_key do | each |
+      dist[each] = INFINITY_LINK_COST
+      pred[each] = nil
+      remains << each
     end
+    dist[start] = 0
 
-    # start node was fixed
-    now = start
-    cost_table[now] = 0
+    while not remains.empty?
 
-    while not remined_nodes.empty?
+      # search node that has minimum distance in 'remines'
+      pd = {}
+      remains.each do | each |
+        pd[each] = dist[each] # projection
+      end
+      (base_dpid, base_dist) = pd.to_a.sort { |a, b| a[1] <=> b[1] }.shift
+      # fix minimum-distance node
+      remains.delete(base_dpid)
+
       ## check
       puts "---------------:--------------------------"
-      puts "now            : #{now}"
-      puts "cost_table     : {#{_pphash cost_table}}"
-      puts "before_node tbl: {#{_pphash before_node_table}}"
-      puts "remined_nodes  : [#{remined_nodes.join(", ")}]"
-      puts "fixed_nodes    : [#{fixed_nodes.join(", ")}]"
+      puts "remains        : [#{remains.join(", ")}]"
+      puts "dist table     : {#{_pphash dist}}"
+      puts "pred table     : {#{_pphash pred}}"
+      puts "base (dist)    : #{base_dpid} (#{base_dist})"
 
       # search neighbors
-      neighbors = @linkindex.neighbors_of(now)
+      neighbors = @linkindex.neighbors_of(base_dpid)
       if neighbors
-
-        # delete fixed nodes from neighbors
-        neighbors -= fixed_nodes
-
-        # update cost of remined nodes (not fixed nodes)
         neighbors.each do |each|
-          linkcost = cost_table[now] + @linkindex.get_link(now, each).cost
-          if cost_table[each] > linkcost
-            cost_table[each] = linkcost
-            before_node_table[each] = now
+          # check if neighbor was not fixed
+          if remains.include?(each)
+            # update neighbors distance
+            linkcost = @linkindex.get_link(base_dpid, each).cost
+            newdist = dist[base_dpid] + linkcost
+            if dist[each] > newdist
+              dist[each] = newdist
+              pred[each] = base_dpid
+            end
           end
         end
-
-        # fix current node (minimum cost in remined_nodes)
-        remined_nodes.delete(now)
-        fixed_nodes.push(now)
-
-        # search minimum cost in remined_nodes and set next 'now'
-        min_cost = INFINITY_LINK_COST
-        min_node = nil
-        remined_nodes.each do |each|
-          if min_cost >= cost_table[each]
-            min_cost = cost_table[each]
-            min_node = each
-          end
-        end
-
-        ## check
-        puts "neighbors      : [#{neighbors.join(", ")}]"
-        puts "next cost tbl  : {#{_pphash cost_table}}"
-        puts "fixed node     : #{now} (cost: #{cost_table[now]})"
-        puts "next node      : #{min_node} (cost: #{min_cost})"
-
-        now = min_node
       else
         warn "DPID:#{now}: Stand Alone Switch?"
         break
       end
+
+      ## check
+      puts "neighbors      : [#{neighbors.join(", ")}]"
+      puts "next dist tbl  : {#{_pphash dist}}"
     end
 
-    return before_node_table
+    return pred
   end
 
 
