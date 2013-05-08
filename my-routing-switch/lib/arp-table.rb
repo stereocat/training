@@ -19,7 +19,7 @@
 
 
 class ARPEntry
-  include Trema::Logger
+  include Trema::DefaultLogger
 
   attr_reader :dpid
   attr_reader :port
@@ -55,7 +55,7 @@ end
 
 
 class ARPTable
-  include Trema::Logger
+  include Trema::DefaultLogger
 
   DEFAULT_AGE_MAX = 300
 
