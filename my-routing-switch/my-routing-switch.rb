@@ -15,7 +15,6 @@ require "router-utils"
 class MyRoutingSwitch < Controller
   periodic_timer_event :age_arp_table, 10
   periodic_timer_event :flood_lldp_frames, 5
-#  periodic_timer_event :check, 10
 
   include RouterUtils
 
@@ -136,7 +135,8 @@ class MyRoutingSwitch < Controller
           packet_out each_dpid, data, actions
         end
       else
-        warn "NOT READY: endpoint_ports[#{dpid}] info"
+        warn "DPID:#{dpid}, endpoint_ports NOT FOUND, it seems stand alone and FLOODing"
+        packet_out dpid, data, SendOutPort.new(OFPP_FLOOD)
       end
     else
       warn "NOT FOUND: endpoint_ports"
@@ -251,19 +251,6 @@ class MyRoutingSwitch < Controller
       :actions => actions,
       :zero_padding => true
     )
-  end
-
-
-  def check
-    puts "[check]"
-    puts "path: #{@topology.get_path(0x4, 0x1).to_a.join(", ")}"
-    puts "endpoint_ports:"
-    @topology.get_endpoint_ports.each_pair do |dpid, port_numberes|
-      puts "dpid: #{dpid}"
-      port_numberes.each do |each|
-        puts "    #{each}"
-      end
-    end
   end
 
 

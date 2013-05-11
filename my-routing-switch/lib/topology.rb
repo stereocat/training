@@ -136,7 +136,7 @@ class Topology
           end
         end
       else
-        warn "DPID:#{Time.now}: Stand Alone Switch?"
+        warn "DPID:#{base_dpid} seems stand alone"
         break
       end
 
