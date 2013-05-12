@@ -6,7 +6,6 @@ Feature: control multiple openflow switchies using routing_switch
 
 
   @slow_process
-#  @wip
   Scenario: One openflow switch and two hosts
     Given a file named "routing-switch.conf" with:
       """
@@ -50,7 +49,6 @@ Feature: control multiple openflow switchies using routing_switch
       |    10 |    10 |
     And switch1 should have a flow entry like dl_dst=00:00:00:00:00:01,nw_dst=192.168.0.1,actions=output
 
-#  @wip
   Scenario: Seven openflow switches and three hosts
     Given a file named "routing-switch.conf" with:
       """
