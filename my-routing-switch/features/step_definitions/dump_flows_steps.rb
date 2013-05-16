@@ -38,7 +38,7 @@ Then /^the number of flow entries on (.+) should be ([0-9]+)$/ do | switch, n |
   count_flow_entries( switch ).should == n.to_i
 end
 
-Then /^(.+) should have a flow entry like (.+)$/ do | switch, spec |
+Then /^(.+) should have a flow entry like "([^"]*)"$/ do | switch, spec |
   count_flow_entries( switch, spec ).should == 1
 end
 
