@@ -4,51 +4,6 @@ Feature: control multiple openflow switchies using routing_switch
   I want to control multiple openflow switches using routing_switch application
   So that I can send and receive packets
 
-
-  @slow_process
-  Scenario: One openflow switch and two hosts
-    Given a file named "routing-switch.conf" with:
-      """
-      vswitch("switch1") { datapath_id "0xabc" }
-
-      vhost("host1")
-      vhost("host2")
-
-      link "switch1", "host1"
-      link "switch1", "host2"
-      """
-    When I run `trema run ../../my-routing-switch.rb -c routing-switch.conf -d`
-    And wait until "MyRoutingSwitch" is up
-    And *** sleep 10 ***
-    Then switch1 should have a flow entry like nw_src=169.254.0.0/16,actions=drop
-    And switch1 should have a flow entry like nw_src=224.0.0.0/24,actions=drop
-
-    When I send 1 packet from host1 to host2
-    Then the total number of tx packets should be:
-      | host1 | host2 |
-      |     1 |     0 |
-    And the total number of rx packets should be:
-      | host1 | host2 |
-      |     0 |     0 |
-
-    When I send 10 packets from host1 to host2
-    Then the total number of tx packets should be:
-      | host1 | host2 |
-      |    11 |     0 |
-    And the total number of rx packets should be:
-      | host1 | host2 |
-      |     0 |    10 |
-    And switch1 should have a flow entry like dl_dst=00:00:00:00:00:02,nw_dst=192.168.0.2,actions=output
-
-    When I send 10 packets from host2 to host1
-    Then the total number of tx packets should be:
-      | host1 | host2 |
-      |    11 |    10 |
-    And the total number of rx packets should be:
-      | host1 | host2 |
-      |    10 |    10 |
-    And switch1 should have a flow entry like dl_dst=00:00:00:00:00:01,nw_dst=192.168.0.1,actions=output
-
   Scenario: Seven openflow switches and three hosts
     Given a file named "routing-switch.conf" with:
       """
@@ -107,9 +62,9 @@ Feature: control multiple openflow switchies using routing_switch
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
       |     0 |     0 |     5 |
-    And sw1 should have a flow entry like dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output
-    And sw2 should have a flow entry like dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output
-    And sw4 should have a flow entry like dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output"
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output"
+    And sw4 should have a flow entry like "dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output"
 
     When I send 5 packets from host4 to host1
     Then the total number of tx packets should be:
@@ -118,9 +73,9 @@ Feature: control multiple openflow switchies using routing_switch
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
       |     5 |     0 |     5 |
-    And sw4 should have a flow entry like dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output
-    And sw2 should have a flow entry like dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output
-    And sw1 should have a flow entry like dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
+    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
 
     When I send 5 packets from host4 to host3
     Then the total number of tx packets should be:
