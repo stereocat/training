@@ -9,14 +9,11 @@ require "trema"
 require "trema-extensions/port"
 
 require "arp-table"
-require "interface"
-require "router-utils"
 
 class MyRoutingSwitch < Controller
   periodic_timer_event :age_arp_table, 10
   periodic_timer_event :flood_lldp_frames, 5
 
-  include RouterUtils
 
   def start
     @command_line = CommandLine.new
@@ -113,12 +110,12 @@ class MyRoutingSwitch < Controller
       packet_out arp_entry.dpid, packet_in.data, SendOutPort.new(arp_entry.port)
     else
       # if not found, flood to endpoints and search destination
-      flood_arp_request dpid, packet_in.in_port, packet_in.data
+      flood_to_endports dpid, packet_in.in_port, packet_in.data
     end
   end
 
 
-  def flood_arp_request dpid, port, data
+  def flood_to_endports dpid, port, data
     # packet_in position: [dpid, port] are ignored when flooding
 
     endpoint_ports = @topology.get_endpoint_ports
@@ -192,12 +189,10 @@ class MyRoutingSwitch < Controller
       flow_mod goal_dpid, dst_match(packet_in), action
       packet_out goal_dpid, packet_in.data, action
     else
-      warn "NOT FOUND path from #{packet_in.ipv4_saddr} to #{packet_in.ipv4_daddr}"
-      # if not found in arp_table,
-      # search where it is, using arp request flooding (proxy arp)
-      interface = Interface.new(packet_in.macsa, packet_in.ipv4_saddr)
-      data = create_arp_request_from interface, packet_in.ipv4_daddr
-      flood_arp_request dpid, packet_in.in_port, data
+      # if the packet was not found in arp_table,
+      # flood it as unknown unicast
+      warn "NOT FOUND the packet from #{packet_in.ipv4_saddr} in arp table: flood it"
+      flood_to_endports dpid, packet_in.in_port, packet_in.data
     end
   end
 
