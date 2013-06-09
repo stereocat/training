@@ -69,40 +69,41 @@ Feature: topology change detection and re-routing
       | host1 | host2 | host3 | host5 | host6 |
       |     8 |     2 |     2 |     2 |     2 |
     # flow check: sw1: forward (host1 -> host2,3,5,6)
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:3"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:3"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5,actions=output:1"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6,actions=output:1"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:02,nw_src=192.168.0.1,nw_dst=192.168.0.2 actions=output:3"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:3"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:1"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:1"
     # flow check: sw1: reverse (host2,3,5,6 -> host1)
-    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
+    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1 actions=output:2"
     # flow check: sw2: forward (host1 -> host2,3)
-    And sw2 should have a flow entry like "dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:2"
-    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:1"
+    And sw2 should have a flow entry like "dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2 actions=output:2"
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
     # flow check: sw2: reverse (host2,3 -> host1)
-    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:02,nw_src=192.168.0.2,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
-    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:03,nw_src=192.168.0.3,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:02,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.2,nw_dst=192.168.0.1 actions=output:3"
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw3: forward (host1 -> host3)
+    And sw3 should have a flow entry like "dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3 actions=output:1"
+    # flow check: sw3: reverse (host3 -> host1)
+    And sw3 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:2"
     # flow check: sw4: forward (host1 -> host5,6)
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5,actions=output:1"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6,actions=output:3"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:1"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:3"
     # flow check: sw4: reverse (host5,6 -> host1)
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:05,nw_src=192.168.0.5,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:06,nw_src=192.168.0.6,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:2"
 
     # topology change occured by linkdown
-    When I turn down port 3 on switch sw2
-    # flow check: sw1: forward (host1 -> host5,6; host1 -> host2,3 (deleted))
-    And sw1 should not have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:3"
-    And sw1 should not have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:3"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5,actions=output:1"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6,actions=output:1"
-    # flow check: sw1: reverse (host2,3,5,6 -> host1)
-    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    # flow check: sw2: forward (host1 -> host2,3) [not changed]
-    And sw2 should have a flow entry like "dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:2"
-    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:1"
-    # flow check: sw2: reverse (host2,3 -> host1(deleted))
-    And sw2 should not have a flow entry like "dl_src=00:00:00:01:00:02,nw_src=192.168.0.2,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
-    And sw2 should not have a flow entry like "dl_src=00:00:00:01:00:03,nw_src=192.168.0.3,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
+    When I turn down port 1 on switch sw2
+    # flow check: sw2: forward (host1 -> host2,3)
+    And sw2 should have a flow entry like "dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2 actions=output:2"
+    And sw2 should not have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
+    # flow check: sw2: reverse (host2,3 -> host1)
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:02,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.2,nw_dst=192.168.0.1 actions=output:3"
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw3: forward (host1 -> host3)
+    And sw3 should have a flow entry like "dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3 actions=output:1"
+    # flow check: sw3: reverse (host3 -> host1)
+    And sw3 should not have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:2"
 
     # send packets again
     When I send 2 times 1 packet bidirectionally host1 and host2
@@ -115,28 +116,107 @@ Feature: topology change detection and re-routing
     And the total number of rx packets should be:
       | host1 | host2 | host3 | host5 | host6 |
       |    16 |     4 |     4 |     4 |     4 |
-    # flow check: sw1: forward (host1 -> host2,3,5,6)
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:1"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:1"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5,actions=output:1"
-    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6,actions=output:1"
+    # flow check: sw1: forward (host1 -> host 2,3,5,6)
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:02,nw_src=192.168.0.1,nw_dst=192.168.0.2 actions=output:3"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:1"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:1"
     # flow check: sw1: reverse (host2,3,5,6 -> host1)
-    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    # flow check: sw4: forward (host1 -> host2,3,5,6)
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:1"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:1"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5,actions=output:1"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6,actions=output:3"
-    # flow check: sw4: reverse (host2,3,5,6 -> host1)
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:02,nw_src=192.168.0.2,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:03,nw_src=192.168.0.3,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:05,nw_src=192.168.0.5,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:06,nw_src=192.168.0.6,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:2"
-    # flow check: sw5: forward (host1 -> host2,3,5)
-    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2,actions=output:4"
-    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output:4"
-    And sw5 should have a flow entry like "dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5,actions=output:1"
-    # flow check: sw5: reverse (host2,3,5 -> host1)
-    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:02,nw_src=192.168.0.2,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
-    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:03,nw_src=192.168.0.3,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
-    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:05,nw_src=192.168.0.5,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output:3"
+    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1 actions=output:2"
+    # flow check: sw2: forward (host1 -> host2)
+    And sw2 should have a flow entry like "dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2 actions=output:2"
+    # flow check: sw2: reverse (host2 -> host1)
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:02,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.2,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw3: forward (host1 -> host3)
+    And sw3 should have a flow entry like "dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3 actions=output:1"
+    # flow check: sw3: reverse (host3 -> host1)
+    And sw3 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw4: forward (host1 -> host3,5,6)
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:1"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:3"
+    # flow check: sw4: reverse (host3,5,6 -> host1)
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:2"
+    # flow check: sw5: forward (host1 -> host3,5)
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:4"
+    And sw5 should have a flow entry like "dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5 actions=output:1"
+    # flow check: sw5: forward (host3,5 -> host1)
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw6: forward (host1 -> host6)
+    And sw6 should have a flow entry like "dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6 actions=output:1"
+    # flow check: sw6: reverse (host6 -> host1)
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:3"
+
+    # topology change occured by linkdown
+    When I turn down port 3 on switch sw5
+    # flow check: sw4: forward (host1 -> host3,5,6)
+    And sw4 should not have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
+    And sw4 should not have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:1"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:3"
+    # flow check: sw4: reverse (host3,5,6 -> host1)
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:2"
+    # flow check: sw5: forward (host1 -> host3,5)
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:4"
+    And sw5 should have a flow entry like "dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5 actions=output:1"
+    # flow check: sw5: forward (host3,5 -> host1)
+    And sw5 should not have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    And sw5 should not have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw6: forward (host1 -> host6)
+    And sw6 should have a flow entry like "dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6 actions=output:1"
+    # flow check: sw6: reverse (host6 -> host1)
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:3"
+
+    # send packets again
+    When I send 2 times 1 packet bidirectionally host1 and host2
+    And I send 2 times 1 packet bidirectionally host1 and host3
+    And I send 2 times 1 packet bidirectionally host1 and host5
+    And I send 2 times 1 packet bidirectionally host1 and host6
+    Then the total number of tx packets should be:
+      | host1 | host2 | host3 | host5 | host6 |
+      |    24 |     6 |     6 |     6 |     6 |
+    And the total number of rx packets should be:
+      | host1 | host2 | host3 | host5 | host6 |
+      |    24 |     6 |     6 |     6 |     6 |
+    # flow check: sw1: forward (host1 -> host2,3,5,6)
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:02,nw_src=192.168.0.1,nw_dst=192.168.0.2 actions=output:3"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:1"
+    And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:1"
+    # flow check: sw1: reverse (host2,3,5,6 -> host1)
+    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1 actions=output:2"
+    # flow check: sw2: forward (host1 -> host2)
+    And sw2 should have a flow entry like "dl_dst=00:00:00:01:00:02,nw_dst=192.168.0.2 actions=output:2"
+    # flow check: sw2: reverse (host2 -> host1)
+    And sw2 should have a flow entry like "dl_src=00:00:00:01:00:02,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.2,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw3: forward (host1 -> host3)
+    And sw3 should have a flow entry like "dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3 actions=output:1"
+    # flow check: sw3: reverse (host3 -> host1)
+    And sw3 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    # flow check: sw4: forward (host1 -> host3,5,6)
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:3"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:3"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:06,nw_src=192.168.0.1,nw_dst=192.168.0.6 actions=output:3"
+    # flow check: sw4: reverse (host3,5,6 -> host1)
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:2"
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:2"
+    # flow check: sw5: forward (host1 -> host3,5)
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:4"
+    And sw5 should have a flow entry like "dl_dst=00:00:00:01:00:05,nw_dst=192.168.0.5 actions=output:1"
+    # flow check: sw5: reverse (host3,5 -> host1)
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:2"
+    And sw5 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:2"
+    # flow check: sw6: forward (host1 -> host3,5,6)
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:2"
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:05,nw_src=192.168.0.1,nw_dst=192.168.0.5 actions=output:2"
+    And sw6 should have a flow entry like "dl_dst=00:00:00:01:00:06,nw_dst=192.168.0.6 actions=output:1"
+    # flow check: sw6: reverse (host3,5,6 -> host1)
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:03,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.3,nw_dst=192.168.0.1 actions=output:3"
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:05,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.5,nw_dst=192.168.0.1 actions=output:3"
+    And sw6 should have a flow entry like "dl_src=00:00:00:01:00:06,dl_dst=00:00:00:01:00:01,nw_src=192.168.0.6,nw_dst=192.168.0.1 actions=output:3"
+
