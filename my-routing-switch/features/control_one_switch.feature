@@ -29,35 +29,36 @@ Feature: control one openflow switch using routing_switch
     Then switch1 should have a flow entry like "nw_src=169.254.0.0/16,actions=drop"
     And switch1 should have a flow entry like "nw_src=224.0.0.0/24,actions=drop"
 
-  Scenario: send one packet, and the packet is dropped
+  Scenario: send one packet, and the packet is flooded
     When I send 1 packet from host1 to host2
     Then the total number of tx packets should be:
       | host1 | host2 |
       |     1 |     0 |
     And the total number of rx packets should be:
       | host1 | host2 |
-      |     0 |     0 |
+      |     0 |     1 |
 
-  Scenario: send packets, and get a new flow entry
+  Scenario: send packets backward direction, and get a new flow entry
     Given I send 1 packet from host1 to host2
-    When I send 10 packets from host1 to host2
+    When I send 1 packet from host2 to host1
     Then the total number of tx packets should be:
       | host1 | host2 |
-      |    11 |     0 |
+      |     1 |     1 |
     And the total number of rx packets should be:
       | host1 | host2 |
-      |     0 |    10 |
-    And switch1 should have a flow entry like "dl_dst=00:00:00:00:00:02,nw_dst=192.168.0.2,actions=output"
+      |     1 |     1 |
+    And switch1 should have a flow entry like "dl_dst=00:00:00:00:00:01,nw_dst=192.168.0.1,actions=output"
 
   Scenario: send packets bidirectionally, and get a flow entry
     Given I send 1 packet from host1 to host2
+    And I send 1 packet from host2 to host1
     When I send 10 packets from host1 to host2
     And I send 10 packets from host2 to host1
     Then the total number of tx packets should be:
       | host1 | host2 |
-      |    11 |    10 |
+      |    11 |    11 |
     And the total number of rx packets should be:
       | host1 | host2 |
-      |    10 |    10 |
+      |    11 |    11 |
     And switch1 should have a flow entry like "dl_dst=00:00:00:00:00:01,nw_dst=192.168.0.1,actions=output"
     And switch1 should have a flow entry like "dl_dst=00:00:00:00:00:02,nw_dst=192.168.0.2,actions=output"

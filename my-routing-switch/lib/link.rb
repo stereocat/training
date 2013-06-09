@@ -9,7 +9,7 @@ class Link
   attr_reader :cost
 
   def dump
-    puts "Link.init(dpid1:#{@dpid1}, dpid2:#{@dpid2}, port1:#{@port1}, port2:#{@port2})"
+    puts "Link(#{@dpid1}/#{@port1}, #{@dpid2}/#{@port2})"
   end
 
   def initialize dpid, packet_in

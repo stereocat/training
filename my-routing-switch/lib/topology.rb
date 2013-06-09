@@ -18,11 +18,12 @@ class Topology
   def_delegator :@links, :each, :each_link
 
 
-  def initialize controller
+  def initialize view, controller
     @ports = Hash.new { [].freeze }
     @links = []
     @linkindex = LinkIndex.new
-    add_observer controller
+    @controller = controller
+    add_observer view
     add_observer @linkindex
   end
 
@@ -70,19 +71,20 @@ class Topology
 
       @links << link
       @links.sort!
+
       changed
       notify_observers self
     end
   end
 
 
-  def get_endpoint_ports
+  def switch_endpoint
     @linkindex.switch_endpoint
   end
 
 
-  def get_link dpid1, dpid2
-    @linkindex.get_link dpid1, dpid2
+  def link_between dpid1, dpid2
+    @linkindex.link_between dpid1, dpid2
   end
 
 
@@ -127,7 +129,7 @@ class Topology
           # check if neighbor was not fixed
           if remains.include?(each)
             # update neighbors distance
-            linkcost = @linkindex.get_link(base_dpid, each).cost
+            linkcost = @linkindex.link_between(base_dpid, each).cost
             newdist = dist[base_dpid] + linkcost
             if dist[each] > newdist
               dist[each] = newdist
@@ -155,12 +157,17 @@ class Topology
 
 
   def delete_link_by dpid, port
-    @links.each do | each |
-      if each.has?( dpid, port.number )
-        changed
-        @links -= [ each ]
-      end
+    puts "[topology::delete_link_by] switch:#{dpid}, port:#{port.number}"
+
+    link = @linkindex.link_of dpid, port.number
+    if link
+      puts "delete link: #{link.dpid1}/#{link.port1} - #{link.dpid2}/#{link.port2}"
+      @controller.flow_remove_by_port link.dpid1, link.port1
+      @controller.flow_remove_by_port link.dpid2, link.port2
+      changed
+      @links -= [ link ]
     end
+
     notify_observers self
   end
 
@@ -171,6 +178,7 @@ class Topology
     hash.each_pair { |k,v| str = str + "#{k} => #{v}, " }
     return str
   end
+
 
 end
 

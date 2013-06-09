@@ -47,21 +47,23 @@ Feature: control multiple openflow switchies using routing_switch
     And *** sleep 10 ***
 
     When I send 1 packet from host1 to host3
-    And I send 1 packet from host1 to host4
+    And I send 1 packet from host3 to host4
+    And I send 1 packet from host4 to host1
     Then the total number of tx packets should be:
       | host1 | host3 | host4 |
-      |     2 |     0 |     0 |
+      |     1 |     1 |     1 |
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
-      |     0 |     0 |     0 |
+      |     1 |     1 |     1 |
+    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
 
     When I send 5 packets from host1 to host4
     Then the total number of tx packets should be:
       | host1 | host3 | host4 |
-      |     7 |     0 |     0 |
+      |     6 |     1 |     1 |
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
-      |     0 |     0 |     5 |
+      |     1 |     1 |     6 |
     And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output"
     And sw2 should have a flow entry like "dl_src=00:00:00:01:00:01,nw_src=192.168.0.1,dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output"
     And sw4 should have a flow entry like "dl_dst=00:00:00:01:00:04,nw_dst=192.168.0.4,actions=output"
@@ -69,10 +71,10 @@ Feature: control multiple openflow switchies using routing_switch
     When I send 5 packets from host4 to host1
     Then the total number of tx packets should be:
       | host1 | host3 | host4 |
-      |     7 |     0 |     5 |
+      |     6 |     1 |     6 |
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
-      |     5 |     0 |     5 |
+      |     6 |     1 |     6 |
     And sw4 should have a flow entry like "dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
     And sw2 should have a flow entry like "dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
     And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
@@ -80,15 +82,19 @@ Feature: control multiple openflow switchies using routing_switch
     When I send 5 packets from host4 to host3
     Then the total number of tx packets should be:
       | host1 | host3 | host4 |
-      |     7 |     0 |    10 |
+      |     6 |     1 |    11 |
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
-      |     5 |     5 |     5 |
+      |     6 |     6 |     6 |
+    And sw4 should have a flow entry like "dl_src=00:00:00:01:00:04,nw_src=192.168.0.4,dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output"
+    And sw3 should have a flow entry like "dl_dst=00:00:00:01:00:03,nw_dst=192.168.0.3,actions=output"
 
     When I send 5 packets from host3 to host1
     Then the total number of tx packets should be:
       | host1 | host3 | host4 |
-      |     7 |     5 |    10 |
+      |     6 |     6 |    11 |
     And the total number of rx packets should be:
       | host1 | host3 | host4 |
-      |    10 |     5 |     5 |
+      |    11 |     6 |     6 |
+    And sw3 should have a flow entry like "dl_src=00:00:00:01:00:03,nw_src=192.168.0.3,dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"
+    And sw1 should have a flow entry like "dl_dst=00:00:00:01:00:01,nw_dst=192.168.0.1,actions=output"

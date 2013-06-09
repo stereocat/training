@@ -66,7 +66,7 @@ class ARPTable
 
 
   def update(dpid, port, ipaddr, hwaddr)
-    info "[ARPTable::update] DPID=#{ @dpid }, port=#{ port }, ipaddr=#{ ipaddr.to_s }, hwaddr=#{ hwaddr.to_s }"
+    info "[ARPTable::update] DPID=#{ dpid }, port=#{ port }, ipaddr=#{ ipaddr.to_s }, hwaddr=#{ hwaddr.to_s }"
 
     entry = @db[ipaddr.to_s]
     if entry

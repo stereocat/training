@@ -43,7 +43,7 @@ Then /^(.+) should have a flow entry like "([^"]*)"$/ do | switch, spec |
 end
 
 
-Then /^(.+) should not have a flow entry like (.+)$/ do | switch, spec |
+Then /^(.+) should not have a flow entry like "([^"]*)"$/ do | switch, spec |
   count_flow_entries( switch, spec ).should == 0
 end
 

@@ -18,19 +18,30 @@
 
 When /^I send (\d+) packets from (.+) to (.+)$/ do | n_packets, host_a, host_b |
   run "trema send_packets --source #{ host_a } --dest #{ host_b } --n_pkts #{ n_packets }"
-  sleep 10  # ensure that all packets are sent
+  sleep [10, n_packets.to_i].min  # ensure that all packets are sent
 end
 
 
 When /^I send 1 packet from (.+) to (.+)$/ do | host_a, host_b |
   step "I send 1 packets from #{ host_a } to #{ host_b }"
-  sleep 1  # ensure that all packets are sent
 end
 
 
 When /^I send packets from (.+) to (.+) \(duration = (\d+)\)$/ do | host_a, host_b, duration |
   run "trema send_packets --source #{ host_a } --dest #{ host_b } --duration #{ duration }"
-  sleep 1  # ensure that all packets are sent
+end
+
+
+When /^I send 1 packet bidirectionally (.+) and (.+)$/ do | host_a, host_b |
+  step "I send 1 packet from #{ host_a } to #{ host_b }"
+  step "I send 1 packet from #{ host_b } to #{ host_a }"
+end
+
+When /^I send (\d+) times 1 packet bidirectionally (.+) and (.+)$/ do | times, host_a, host_b |
+  times.to_i.times do |i|
+    step "I send 1 packet from #{ host_a } to #{ host_b }"
+    step "I send 1 packet from #{ host_b } to #{ host_a }"
+  end
 end
 
 

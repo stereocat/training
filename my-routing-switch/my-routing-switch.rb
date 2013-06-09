@@ -9,19 +9,16 @@ require "trema"
 require "trema-extensions/port"
 
 require "arp-table"
-require "interface"
-require "router-utils"
 
 class MyRoutingSwitch < Controller
-  periodic_timer_event :age_arp_table, 10
+#  periodic_timer_event :age_arp_table, 10
   periodic_timer_event :flood_lldp_frames, 5
 
-  include RouterUtils
 
   def start
     @command_line = CommandLine.new
     @command_line.parse( ARGV.dup )
-    @topology = Topology.new( @command_line.view )
+    @topology = Topology.new( @command_line.view, self )
     @arp_table = ARPTable.new
     @switch_ready = {}
     @switch_ready.default = false
@@ -52,6 +49,7 @@ class MyRoutingSwitch < Controller
 
 
   def port_status dpid, port_status
+    puts "[MyRoutingSwitch::port_status] switch:#{dpid}"
     updated_port = port_status.port
     return if updated_port.local?
     @topology.update_port dpid, updated_port
@@ -80,16 +78,33 @@ class MyRoutingSwitch < Controller
   end
 
 
+  def flow_remove_by_port dpid, port
+    puts "[MyRoutingSwitch::flow_remove_by_port] switch:#{dpid}, port:#{port}"
+
+    send_flow_mod_delete(
+      dpid,
+      :out_port => port
+    )
+  end
+
+
   ##############################################################################
   private
   ##############################################################################
 
 
   def update_arp_table dpid, packet_in
-    if packet_in.arp?
-      @arp_table.update dpid, packet_in.in_port, packet_in.arp_spa, packet_in.arp_sha
-    elsif packet_in.ipv4?
-      @arp_table.update dpid, packet_in.in_port, packet_in.ipv4_saddr, packet_in.macsa
+    endpoint_ports = @topology.switch_endpoint
+    if endpoint_ports[dpid] and not endpoint_ports[dpid].include?(packet_in.in_port)
+      warn "[MyRoutingSwitch::update_arp_table] not endpoint link"
+    else
+      # if endpoint_ports[dpid] is nil,
+      # then switch:dpid is single(stand alone).
+      if packet_in.arp?
+        @arp_table.update dpid, packet_in.in_port, packet_in.arp_spa, packet_in.arp_sha
+      elsif packet_in.ipv4?
+        @arp_table.update dpid, packet_in.in_port, packet_in.ipv4_saddr, packet_in.macsa
+      end
     end
 
     # @arp_table.dump
@@ -113,15 +128,15 @@ class MyRoutingSwitch < Controller
       packet_out arp_entry.dpid, packet_in.data, SendOutPort.new(arp_entry.port)
     else
       # if not found, flood to endpoints and search destination
-      flood_arp_request dpid, packet_in.in_port, packet_in.data
+      flood_to_endports dpid, packet_in.in_port, packet_in.data
     end
   end
 
 
-  def flood_arp_request dpid, port, data
+  def flood_to_endports dpid, port, data
     # packet_in position: [dpid, port] are ignored when flooding
 
-    endpoint_ports = @topology.get_endpoint_ports
+    endpoint_ports = @topology.switch_endpoint
     if endpoint_ports
       if endpoint_ports[dpid]
         endpoint_ports.each_pair do |each_dpid, port_numbers|
@@ -169,18 +184,25 @@ class MyRoutingSwitch < Controller
 
     puts "IPv4: dpid:#{dpid}, port:#{packet_in.in_port}, #{packet_in.ipv4_saddr}->#{packet_in.ipv4_daddr}"
 
-    arp_entry = @arp_table.lookup_by_ipaddr(packet_in.ipv4_daddr)
-    if arp_entry
-      start_dpid = dpid
-      goal_dpid = arp_entry.dpid
-      goal_port = arp_entry.port
+    src_arp_entry = @arp_table.lookup_by_ipaddr(packet_in.ipv4_saddr)
+    start_dpid = dpid
+    if src_arp_entry
+      start_dpid = src_arp_entry.dpid
+    else
+      warn "NOT FOUND: src #{packet_in.ipv4_saddr} info in arp table, SWITCH FLOW MISMATCH under path?, use packet_in.in_port:#{packet_in.in_port}"
+    end
+
+    dst_arp_entry = @arp_table.lookup_by_ipaddr(packet_in.ipv4_daddr)
+    if dst_arp_entry
+      goal_dpid = dst_arp_entry.dpid
+      goal_port = dst_arp_entry.port
 
       path = @topology.get_path goal_dpid, start_dpid
 
       now_dpid = start_dpid
       while path[now_dpid]
         next_dpid = path[now_dpid]
-        link = @topology.get_link(now_dpid, next_dpid)
+        link = @topology.link_between(now_dpid, next_dpid)
 
         puts "flow_mod: dpid:#{now_dpid}/port:#{link.port1} -> dpid:#{next_dpid}"
         flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
@@ -192,12 +214,10 @@ class MyRoutingSwitch < Controller
       flow_mod goal_dpid, dst_match(packet_in), action
       packet_out goal_dpid, packet_in.data, action
     else
-      warn "NOT FOUND path from #{packet_in.ipv4_saddr} to #{packet_in.ipv4_daddr}"
-      # if not found in arp_table,
-      # search where it is, using arp request flooding (proxy arp)
-      interface = Interface.new(packet_in.macsa, packet_in.ipv4_saddr)
-      data = create_arp_request_from interface, packet_in.ipv4_daddr
-      flood_arp_request dpid, packet_in.in_port, data
+      # if the packet was not found in arp_table,
+      # flood it as unknown unicast
+      warn "NOT FOUND: dest #{packet_in.ipv4_daddr} info in arp table from #{packet_in.ipv4_saddr}: flooding"
+      flood_to_endports dpid, packet_in.in_port, packet_in.data
     end
   end
 
@@ -225,7 +245,7 @@ class MyRoutingSwitch < Controller
   def flow_mod dpid, match, actions
     send_flow_mod_add(
       dpid,
-      :idle_timeout => 300,
+      :idle_timeout => 0, #300,
       :match => match,
       :actions => actions
     )

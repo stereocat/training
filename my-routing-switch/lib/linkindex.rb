@@ -54,16 +54,25 @@ class LinkIndex
       end
     end
 
-    dump
+    # dump
   end
 
 
-  def get_link dpid1, dpid2
+  def link_between dpid1, dpid2
     @switch_index[dpid1].each_key do |each|
       if @switch_index[dpid1][each][:link_obj]
         link = @switch_index[dpid1][each][:link_obj]
         return link if link.dpid2 == dpid2
       end
+    end
+    nil
+  end
+
+
+  def link_of dpid, port
+    puts "[linkindex::link_of] #{dpid}/#{port}"
+    if @switch_index[dpid][port][:link_obj]
+      return @switch_index[dpid][port][:link_obj]
     end
     nil
   end
