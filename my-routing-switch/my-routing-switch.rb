@@ -78,7 +78,7 @@ class MyRoutingSwitch < Controller
   end
 
 
-  def flow_remove_by_port dpid, port
+  def flow_delete_by_port dpid, port
     puts "[MyRoutingSwitch::flow_remove_by_port] switch:#{dpid}, port:#{port}"
 
     send_flow_mod_delete(

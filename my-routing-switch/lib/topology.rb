@@ -162,8 +162,8 @@ class Topology
     link = @linkindex.link_of dpid, port.number
     if link
       puts "delete link: #{link.dpid1}/#{link.port1} - #{link.dpid2}/#{link.port2}"
-      @controller.flow_remove_by_port link.dpid1, link.port1
-      @controller.flow_remove_by_port link.dpid2, link.port2
+      @controller.flow_delete_by_port link.dpid1, link.port1
+      @controller.flow_delete_by_port link.dpid2, link.port2
       changed
       @links -= [ link ]
     end
