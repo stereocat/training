@@ -8,9 +8,6 @@ class Link
   attr_reader :port2
   attr_reader :cost
 
-  def dump
-    puts "Link(#{@dpid1}/#{@port1}, #{@dpid2}/#{@port2})"
-  end
 
   def initialize dpid, packet_in
     lldp = Lldp.read( packet_in.data )
@@ -20,6 +17,7 @@ class Link
     @port2 = packet_in.in_port
     @cost = 10 # default link cost
   end
+
 
   def == other
     ( @dpid1 == other.dpid1 ) and

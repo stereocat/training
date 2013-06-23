@@ -65,15 +65,12 @@ class Topology
     link = Link.new( dpid, packet_in )
 
     if not @links.include?( link )
-
-      # puts "# [add_link_by] not included link"
-      # link.dump
-
+      puts "add link: #{link.dpid1}/#{link.port1} - #{link.dpid2}/#{link.port2}"
       @links << link
       @links.sort!
-
       changed
       notify_observers self
+      @controller.rewrite_flows
     end
   end
 
@@ -115,12 +112,12 @@ class Topology
       # fix minimum-distance node
       remains.delete(base_dpid)
 
-      ## check
-      puts "---------------:--------------------------"
-      puts "remains        : [#{remains.join(", ")}]"
-      puts "dist table     : {#{_pphash dist}}"
-      puts "pred table     : {#{_pphash pred}}"
-      puts "base (dist)    : #{base_dpid} (#{base_dist})"
+      # ## check
+      # puts "---------------:--------------------------"
+      # puts "remains        : [#{remains.join(", ")}]"
+      # puts "dist table     : {#{_pphash dist}}"
+      # puts "pred table     : {#{_pphash pred}}"
+      # puts "base (dist)    : #{base_dpid} (#{base_dist})"
 
       # search neighbors
       neighbors = @linkindex.neighbors_of(base_dpid)
@@ -142,9 +139,9 @@ class Topology
         break
       end
 
-      ## check
-      puts "neighbors      : [#{neighbors.join(", ")}]"
-      puts "next dist tbl  : {#{_pphash dist}}"
+      # ## check
+      # puts "neighbors      : [#{neighbors.join(", ")}]"
+      # puts "next dist tbl  : {#{_pphash dist}}"
     end
 
     return pred

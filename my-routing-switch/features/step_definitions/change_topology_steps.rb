@@ -15,12 +15,12 @@
 
 When /^I turn down port (.+) on switch (.+)$/ do | port, switch |
   run "trema port_down --switch #{ switch } --port #{ port }"
-  sleep 1
+  sleep 3
 end
 
 When /^I turn up port (.+) on switch (.+)$/ do | port, switch |
   run "trema port_up --switch #{ switch } --port #{ port }"
-  sleep 1
+  sleep 3
 end
 
 

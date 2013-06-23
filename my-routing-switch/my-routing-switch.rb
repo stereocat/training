@@ -9,9 +9,10 @@ require "trema"
 require "trema-extensions/port"
 
 require "arp-table"
+require "flowindex"
 
 class MyRoutingSwitch < Controller
-#  periodic_timer_event :age_arp_table, 10
+  # periodic_timer_event :age_arp_table, 10
   periodic_timer_event :flood_lldp_frames, 5
 
 
@@ -22,6 +23,7 @@ class MyRoutingSwitch < Controller
     @arp_table = ARPTable.new
     @switch_ready = {}
     @switch_ready.default = false
+    @flowindex = FlowIndex.new()
   end
 
 
@@ -49,12 +51,21 @@ class MyRoutingSwitch < Controller
 
 
   def port_status dpid, port_status
-    puts "[MyRoutingSwitch::port_status] switch:#{dpid}"
+    info "[MyRoutingSwitch::port_status] switch:#{dpid}"
+
     updated_port = port_status.port
     return if updated_port.local?
     @topology.update_port dpid, updated_port
   end
 
+
+  def flow_removed dpid, flow_removed
+    puts "[MyRoutingSwitch::flow_removed] switch:#{dpid}"
+
+    # delete cached flow info
+    @flowindex.delete_by_flow_removed flow_removed
+    @flowindex.dump
+  end
 
   def packet_in dpid, packet_in
 
@@ -88,9 +99,50 @@ class MyRoutingSwitch < Controller
   end
 
 
+  def rewrite_flows
+    puts "[MyRoutingSwitch::rewrite_flows]"
+
+    @flowindex.flows.each do | each |
+      src_arp_entry = @arp_table.lookup_by_ipaddr(each.ipv4_saddr)
+      dst_arp_entry = @arp_table.lookup_by_ipaddr(each.ipv4_daddr)
+
+      if src_arp_entry and dst_arp_entry
+        # rewire known(cached) flows
+        flow_mod_to_path src_arp_entry.dpid, dst_arp_entry, each
+      else
+        warn "NOT Found src and/or dst info in arp_table"
+      end
+    end
+  end
+
   ##############################################################################
   private
   ##############################################################################
+
+
+  def flow_mod_to_path start_dpid, dst_arp_entry, packet_in
+    goal_dpid = dst_arp_entry.dpid
+    goal_port = dst_arp_entry.port
+
+    path = @topology.get_path goal_dpid, start_dpid
+
+    now_dpid = start_dpid
+    while path[now_dpid]
+      next_dpid = path[now_dpid]
+      link = @topology.link_between(now_dpid, next_dpid)
+      if link
+        puts "flow_mod: dpid:#{now_dpid}/port:#{link.port1} -> dpid:#{next_dpid}"
+        flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
+        now_dpid = next_dpid
+      else
+        warn "[path] link: not found"
+        break
+      end
+    end
+
+    # last hop
+    flow_mod goal_dpid, dst_match(packet_in), SendOutPort.new(goal_port)
+  end
 
 
   def update_arp_table dpid, packet_in
@@ -194,25 +246,13 @@ class MyRoutingSwitch < Controller
 
     dst_arp_entry = @arp_table.lookup_by_ipaddr(packet_in.ipv4_daddr)
     if dst_arp_entry
-      goal_dpid = dst_arp_entry.dpid
-      goal_port = dst_arp_entry.port
-
-      path = @topology.get_path goal_dpid, start_dpid
-
-      now_dpid = start_dpid
-      while path[now_dpid]
-        next_dpid = path[now_dpid]
-        link = @topology.link_between(now_dpid, next_dpid)
-
-        puts "flow_mod: dpid:#{now_dpid}/port:#{link.port1} -> dpid:#{next_dpid}"
-        flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
-        now_dpid = next_dpid
-      end
-
-      # last hop
-      action = SendOutPort.new(goal_port)
-      flow_mod goal_dpid, dst_match(packet_in), action
-      packet_out goal_dpid, packet_in.data, action
+      # calculate path between src to dst, and write flows to path-switches
+      flow_mod_to_path start_dpid, dst_arp_entry, packet_in
+      # packet_out from last-hop of path to destination host
+      packet_out dst_arp_entry.dpid, packet_in.data, SendOutPort.new(dst_arp_entry.port)
+      # cache flow info
+      @flowindex.add_by_packet_in packet_in
+      @flowindex.dump
     else
       # if the packet was not found in arp_table,
       # flood it as unknown unicast
@@ -245,7 +285,7 @@ class MyRoutingSwitch < Controller
   def flow_mod dpid, match, actions
     send_flow_mod_add(
       dpid,
-      :idle_timeout => 0, #300,
+      :idle_timeout => 300,
       :match => match,
       :actions => actions
     )
