@@ -63,7 +63,7 @@ class MyRoutingSwitch < Controller
     puts "[MyRoutingSwitch::flow_removed] switch:#{dpid}"
 
     # delete cached flow info
-    @flowindex.delete_by_flow_removed flow_removed
+    @flowindex.delete_by_flow_removed dpid, flow_removed
     @flowindex.dump
   end
 
@@ -108,7 +108,8 @@ class MyRoutingSwitch < Controller
 
       if src_arp_entry and dst_arp_entry
         # rewire known(cached) flows
-        flow_mod_to_path src_arp_entry.dpid, dst_arp_entry, each
+        path = flow_mod_to_path src_arp_entry.dpid, dst_arp_entry, each
+        each.update_path path
       else
         warn "NOT Found src and/or dst info in arp_table"
       end
@@ -124,24 +125,27 @@ class MyRoutingSwitch < Controller
     goal_dpid = dst_arp_entry.dpid
     goal_port = dst_arp_entry.port
 
-    path = @topology.get_path goal_dpid, start_dpid
-
+    pred = @topology.path_between goal_dpid, start_dpid
     now_dpid = start_dpid
-    while path[now_dpid]
-      next_dpid = path[now_dpid]
+    path = []
+
+    while pred[now_dpid]
+      path << now_dpid
+      next_dpid = pred[now_dpid]
       link = @topology.link_between(now_dpid, next_dpid)
       if link
         puts "flow_mod: dpid:#{now_dpid}/port:#{link.port1} -> dpid:#{next_dpid}"
         flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
         now_dpid = next_dpid
       else
-        warn "[path] link: not found"
+        warn "[pred] link: not found"
         break
       end
     end
-
     # last hop
     flow_mod goal_dpid, dst_match(packet_in), SendOutPort.new(goal_port)
+
+    return path # Notice: do not includes last-hop dpid
   end
 
 
@@ -247,11 +251,11 @@ class MyRoutingSwitch < Controller
     dst_arp_entry = @arp_table.lookup_by_ipaddr(packet_in.ipv4_daddr)
     if dst_arp_entry
       # calculate path between src to dst, and write flows to path-switches
-      flow_mod_to_path start_dpid, dst_arp_entry, packet_in
+      path = flow_mod_to_path start_dpid, dst_arp_entry, packet_in
       # packet_out from last-hop of path to destination host
       packet_out dst_arp_entry.dpid, packet_in.data, SendOutPort.new(dst_arp_entry.port)
       # cache flow info
-      @flowindex.add_by_packet_in packet_in
+      @flowindex.add_by_packet_in dpid, packet_in, path
       @flowindex.dump
     else
       # if the packet was not found in arp_table,
@@ -285,7 +289,7 @@ class MyRoutingSwitch < Controller
   def flow_mod dpid, match, actions
     send_flow_mod_add(
       dpid,
-      :idle_timeout => 300,
+      :idle_timeout => 150,
       :match => match,
       :actions => actions
     )

@@ -85,7 +85,7 @@ class Topology
   end
 
 
-  def get_path start, goal
+  def path_between start, goal
     puts "[get_path], start:#{start}, goal:#{goal}"
 
     # start/goal are dpid
