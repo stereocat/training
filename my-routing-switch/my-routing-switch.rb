@@ -289,7 +289,7 @@ class MyRoutingSwitch < Controller
   def flow_mod dpid, match, actions
     send_flow_mod_add(
       dpid,
-      :idle_timeout => 150,
+      :idle_timeout => 300,
       :match => match,
       :actions => actions
     )

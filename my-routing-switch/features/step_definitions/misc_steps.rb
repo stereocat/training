@@ -14,3 +14,7 @@ end
 When /^\*\*\* sleep (\d+) \*\*\*$/ do | sec |
   sleep sec.to_i
 end
+
+When /^I say "(.+)"$/ do | message |
+  true
+end
