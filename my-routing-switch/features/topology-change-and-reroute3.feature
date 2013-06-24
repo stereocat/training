@@ -222,8 +222,6 @@ Feature: topology change detection and re-routing test No.3
 
     When I say "Step.6: recover link between sw4-sw5, change topology_C to topology_B"
     And I turn up port 3 on switch sw5
-    And I say "wait a few sec to lldp fooding and topology re-calculate"
-    And *** sleep 5 ***
     # flow check: sw1: forward (host1 -> host 2,3,5,6)
     And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:02,nw_src=192.168.0.1,nw_dst=192.168.0.2 actions=output:3"
     And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:1"
@@ -272,8 +270,6 @@ Feature: topology change detection and re-routing test No.3
 
     When I say "Step.8: recover link between sw2-sw3, change topology_B to topology_A"
     And I turn up port 1 on switch sw2
-    And I say "wait a few sec to lldp fooding and topology re-calculate"
-    And *** sleep 5 ***
     # flow check: sw1: forward (host1 -> host2,3,5,6)
     And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:02,nw_src=192.168.0.1,nw_dst=192.168.0.2 actions=output:3"
     And sw1 should have a flow entry like "dl_src=00:00:00:01:00:01,dl_dst=00:00:00:01:00:03,nw_src=192.168.0.1,nw_dst=192.168.0.3 actions=output:3"

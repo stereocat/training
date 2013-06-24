@@ -1,3 +1,5 @@
+require "forwardable"
+
 class FlowEntry
   attr_reader :macsa
   attr_reader :macda
@@ -44,7 +46,8 @@ end
 
 
 class FlowIndex
-  attr_reader :flows
+  extend Forwardable
+  def_delegator :@flows, :each, :each_flow
 
   def initialize
     @flows = []

@@ -55,7 +55,10 @@ class MyRoutingSwitch < Controller
 
     updated_port = port_status.port
     return if updated_port.local?
+
     @topology.update_port dpid, updated_port
+    # update link info, asap!
+    flood_lldp_frames
   end
 
 
@@ -102,7 +105,7 @@ class MyRoutingSwitch < Controller
   def rewrite_flows
     puts "[MyRoutingSwitch::rewrite_flows]"
 
-    @flowindex.flows.each do | each |
+    @flowindex.each_flow do | each |
       src_arp_entry = @arp_table.lookup_by_ipaddr(each.ipv4_saddr)
       dst_arp_entry = @arp_table.lookup_by_ipaddr(each.ipv4_daddr)
 
@@ -115,6 +118,7 @@ class MyRoutingSwitch < Controller
       end
     end
   end
+
 
   ##############################################################################
   private
