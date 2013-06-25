@@ -35,11 +35,11 @@ class MyRoutingSwitch < Controller
 
 
   def features_reply dpid, features_reply
+    puts "[MyRoutingSwitch::features_reply] switch:#{dpid.to_hex} ready"
+
     features_reply.physical_ports.select( &:up? ).each do | each |
       @topology.add_port dpid, each
     end
-
-    puts "[MyRoutingSwitch::features_reply] switch:#{dpid.to_hex} ready"
     @switch_ready[dpid] = true
     # update link info, asap!
     flood_lldp_frames
@@ -47,6 +47,8 @@ class MyRoutingSwitch < Controller
 
 
   def switch_disconnected dpid
+    info "[MyRoutingSwitch::switch_disconnected] switch:#{dpid.to_hex}"
+
     @topology.delete_switch dpid
     @switch_ready.delete(dpid)
   end

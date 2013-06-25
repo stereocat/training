@@ -23,6 +23,16 @@ When /^I turn up port (.+) on switch (.+)$/ do | port, switch |
   sleep 3
 end
 
+When /^I kill switch (.+)$/ do | switch |
+  run "trema kill #{ switch }"
+  sleep 3
+end
+
+When /^I boot switch (.+)$/ do | switch |
+  run "trema up #{ switch }"
+  sleep 3
+end
+
 
 ### Local variables:
 ### mode: Ruby
