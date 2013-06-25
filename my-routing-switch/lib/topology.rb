@@ -48,7 +48,7 @@ class Topology
   def add_port dpid, port
     @ports[ dpid ] += [ port ]
 
-    # puts "# [add_port], dpid:#{dpid}"
+    # puts "# [add_port], dpid:#{dpid.to_hex}"
     # puts "number:#{port.number}, name:#{port.name}"
   end
 
@@ -65,7 +65,7 @@ class Topology
     link = Link.new( dpid, packet_in )
 
     if not @links.include?( link )
-      puts "add link: #{link.dpid1}/#{link.port1} - #{link.dpid2}/#{link.port2}"
+      puts "add link: #{link.dpid1.to_hex}/#{link.port1} - #{link.dpid2.to_hex}/#{link.port2}"
       @links << link
       @links.sort!
       changed
@@ -86,7 +86,7 @@ class Topology
 
 
   def path_between start, goal
-    puts "[get_path], start:#{start}, goal:#{goal}"
+    puts "[get_path], start:#{start.to_hex}, goal:#{goal.to_hex}"
 
     # start/goal are dpid
     dist = {}
@@ -117,7 +117,7 @@ class Topology
       # puts "remains        : [#{remains.join(", ")}]"
       # puts "dist table     : {#{_pphash dist}}"
       # puts "pred table     : {#{_pphash pred}}"
-      # puts "base (dist)    : #{base_dpid} (#{base_dist})"
+      # puts "base (dist)    : #{base_dpid.to_hex} (#{base_dist.to_hex})"
 
       # search neighbors
       neighbors = @linkindex.neighbors_of(base_dpid)
@@ -154,11 +154,11 @@ class Topology
 
 
   def delete_link_by dpid, port
-    puts "[topology::delete_link_by] switch:#{dpid}, port:#{port.number}"
+    puts "[topology::delete_link_by] switch:#{dpid.to_hex}, port:#{port.number}"
 
     link = @linkindex.link_of dpid, port.number
     if link
-      puts "delete link: #{link.dpid1}/#{link.port1} - #{link.dpid2}/#{link.port2}"
+      puts "delete link: #{link.dpid1.to_hex}/#{link.port1} - #{link.dpid2.to_hex}/#{link.port2}"
       @controller.flow_delete_by_port link.dpid1, link.port1
       @controller.flow_delete_by_port link.dpid2, link.port2
       changed

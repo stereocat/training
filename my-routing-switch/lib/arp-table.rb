@@ -98,7 +98,7 @@ class ARPTable
     puts "[ARPTable::dump]"
 
     @db.each do |ipaddr, entry|
-      puts "#{ ipaddr.to_s } > #{ entry.dpid }, #{ entry.port }, #{ entry.hwaddr.to_s }"
+      puts "#{ ipaddr.to_s } > #{ entry.dpid.to_hex }, #{ entry.port }, #{ entry.hwaddr.to_s }"
     end
   end
 

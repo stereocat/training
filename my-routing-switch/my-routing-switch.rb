@@ -12,8 +12,8 @@ require "arp-table"
 require "flowindex"
 
 class MyRoutingSwitch < Controller
-  # periodic_timer_event :age_arp_table, 10
-  periodic_timer_event :flood_lldp_frames, 5
+  periodic_timer_event :age_arp_table, 10
+  periodic_timer_event :flood_lldp_frames, 30
 
 
   def start
@@ -39,8 +39,10 @@ class MyRoutingSwitch < Controller
       @topology.add_port dpid, each
     end
 
-    puts "[MyRoutingSwitch::features_reply] switch:#{dpid} ready"
+    puts "[MyRoutingSwitch::features_reply] switch:#{dpid.to_hex} ready"
     @switch_ready[dpid] = true
+    # update link info, asap!
+    flood_lldp_frames
   end
 
 
@@ -51,7 +53,7 @@ class MyRoutingSwitch < Controller
 
 
   def port_status dpid, port_status
-    info "[MyRoutingSwitch::port_status] switch:#{dpid}"
+    info "[MyRoutingSwitch::port_status] switch:#{dpid.to_hex}"
 
     updated_port = port_status.port
     return if updated_port.local?
@@ -63,7 +65,7 @@ class MyRoutingSwitch < Controller
 
 
   def flow_removed dpid, flow_removed
-    puts "[MyRoutingSwitch::flow_removed] switch:#{dpid}"
+    puts "[MyRoutingSwitch::flow_removed] switch:#{dpid.to_hex}"
 
     # delete cached flow info
     @flowindex.delete_by_flow_removed dpid, flow_removed
@@ -93,7 +95,7 @@ class MyRoutingSwitch < Controller
 
 
   def flow_delete_by_port dpid, port
-    puts "[MyRoutingSwitch::flow_remove_by_port] switch:#{dpid}, port:#{port}"
+    puts "[MyRoutingSwitch::flow_remove_by_port] switch:#{dpid.to_hex}, port:#{port}"
 
     send_flow_mod_delete(
       dpid,
@@ -138,7 +140,7 @@ class MyRoutingSwitch < Controller
       next_dpid = pred[now_dpid]
       link = @topology.link_between(now_dpid, next_dpid)
       if link
-        puts "flow_mod: dpid:#{now_dpid}/port:#{link.port1} -> dpid:#{next_dpid}"
+        puts "flow_mod: dpid:#{now_dpid.to_hex}/port:#{link.port1} -> dpid:#{next_dpid}"
         flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
         now_dpid = next_dpid
       else
@@ -204,7 +206,7 @@ class MyRoutingSwitch < Controller
           port_numbers.each do |each|
             next if each_dpid == dpid and port == each
 
-            puts "FLOOD: action: dpid: #{each_dpid}, SendOutPort: #{each}"
+            puts "FLOOD: action: dpid: #{each_dpid.to_hex}, SendOutPort: #{each}"
             actions << SendOutPort.new(each)
           end
           packet_out each_dpid, data, actions
@@ -229,7 +231,7 @@ class MyRoutingSwitch < Controller
     arp_entry = @arp_table.lookup_by_ipaddr(daddr)
 
     if arp_entry
-      puts "action: dpid:#{arp_entry.dpid}, SendOutPort: #{arp_entry.port}"
+      puts "action: dpid:#{arp_entry.dpid.to_hex}, SendOutPort: #{arp_entry.port}"
       packet_out arp_entry.dpid, packet_in.data, SendOutPort.new(arp_entry.port)
     else
       error "NOT FOUND destination of arp_reply: #{packet_in.arp_spa}/#{packet_in.arp_sha}"
@@ -242,7 +244,7 @@ class MyRoutingSwitch < Controller
 
     update_arp_table dpid, packet_in
 
-    puts "IPv4: dpid:#{dpid}, port:#{packet_in.in_port}, #{packet_in.ipv4_saddr}->#{packet_in.ipv4_daddr}"
+    puts "IPv4: dpid:#{dpid.to_hex}, port:#{packet_in.in_port}, #{packet_in.ipv4_saddr}->#{packet_in.ipv4_daddr}"
 
     src_arp_entry = @arp_table.lookup_by_ipaddr(packet_in.ipv4_saddr)
     start_dpid = dpid

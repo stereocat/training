@@ -26,7 +26,7 @@ class LinkIndex
     topology.each_switch do |dpid, ports|
       @switch_index[dpid] = {}
       ports.each do |each|
-        # puts "add port_obj to index: dpid:#{dpid}, port:#{each.number}"
+        # puts "add port_obj to index: dpid:#{dpid.to_hex}, port:#{each.number}"
         @switch_index[dpid][each.number] = {}
         @switch_index[dpid][each.number][:port_obj] = each
         # puts "  num:#{@switch_index[dpid][each.number][:port_obj].number}"
@@ -35,7 +35,7 @@ class LinkIndex
     # always dpid/ports set is larger than dpid/links
     # if exists link_obj, then the port(link) is switch-to-switch
     topology.each_link do |each|
-      # puts "add link_obj to index: dpid:#{each.dpid1}, port:#{each.port1}"
+      # puts "add link_obj to index: dpid:#{each.dpid1.to_hex}, port:#{each.port1}"
       @switch_index[each.dpid1][each.port1][:link_obj] = each
       # puts "  num:#{@switch_index[each.dpid1][each.port1][:link_obj].port1}"
     end
@@ -70,7 +70,7 @@ class LinkIndex
 
 
   def link_of dpid, port
-    puts "[linkindex::link_of] #{dpid}/#{port}"
+    puts "[linkindex::link_of] #{dpid.to_hex}/#{port}"
     if @switch_index[dpid][port][:link_obj]
       return @switch_index[dpid][port][:link_obj]
     end
@@ -82,13 +82,13 @@ class LinkIndex
     puts "[LinkIndex::dump]"
 
     @switch_index.each_key do |dpid|
-      puts "dpid: #{dpid}"
+      puts "dpid: #{dpid.to_hex}"
       @switch_index[dpid].each_key do |each|
         port = @switch_index[dpid][each][:port_obj]
         link = @switch_index[dpid][each][:link_obj] ? @switch_index[dpid][each][:link_obj] : false
         puts "  port_number: #{each}"
         puts "    port_name    : #{port.name}"
-        puts "    nbr dpid/port: #{link.dpid2}/#{link.port2}" if link
+        puts "    nbr dpid/port: #{link.dpid2.to_hex}/#{link.port2}" if link
       end
 
       puts "  neighbors: #{@switch_neighbor[dpid].join(', ')}"

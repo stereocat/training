@@ -93,7 +93,7 @@ class FlowIndex
 
   # args are Trema::Mac/Trema::IP object
   def add dpid, macsa, macda, eth_type, ipv4_saddr, ipv4_daddr, path
-    puts "[FlowIndex::add] #{dpid},#{macsa},#{macda},#{eth_type.to_hex},#{ipv4_saddr},#{ipv4_daddr}"
+    puts "[FlowIndex::add] #{dpid.to_hex},#{macsa},#{macda},#{eth_type.to_hex},#{ipv4_saddr},#{ipv4_daddr}"
 
     flow = FlowEntry.new(
       macsa,
@@ -109,7 +109,7 @@ class FlowIndex
 
   # args are Trema::Mac/Trema::IP object
   def delete dpid, macsa, macda, eth_type, ipv4_saddr, ipv4_daddr
-    puts "[FlowIndex::delete] #{dpid},#{macsa},#{macda},#{eth_type.to_hex},#{ipv4_saddr},#{ipv4_daddr}"
+    puts "[FlowIndex::delete] #{dpid.to_hex},#{macsa},#{macda},#{eth_type.to_hex},#{ipv4_saddr},#{ipv4_daddr}"
 
     flow = FlowEntry.new(
       macsa,
