@@ -260,11 +260,19 @@ class MyRoutingSwitch < Controller
     if dst_arp_entry
       # calculate path between src to dst, and write flows to path-switches
       path = flow_mod_to_path start_dpid, dst_arp_entry, packet_in
-      # packet_out from last-hop of path to destination host
-      packet_out dst_arp_entry.dpid, packet_in.data, SendOutPort.new(dst_arp_entry.port)
-      # cache flow info
-      @flowindex.add_by_packet_in dpid, packet_in, path
-      @flowindex.dump
+      # if start_dpid == dst_arp_entry.dpid,
+      # src/dst hosts are connected to same switches and path is empty.
+      if path.empty? and ( start_dpid != dst_arp_entry.dpid )
+        # src/dst hosts are connected to different switche each other,
+        # but not found the path between src and dst.
+        warn "FOUND arp entry. But NOT FOUND: path from dpid:#{start_dpid.to_hex} to dpid:#{dst_arp_entry.dpid.to_hex}"
+      else
+        # packet_out from last-hop of path to destination host
+        packet_out dst_arp_entry.dpid, packet_in.data, SendOutPort.new(dst_arp_entry.port)
+        # cache flow info
+        @flowindex.add_by_packet_in dpid, packet_in, path
+        @flowindex.dump
+      end
     else
       # if the packet was not found in arp_table,
       # flood it as unknown unicast

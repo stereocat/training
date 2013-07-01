@@ -1,4 +1,4 @@
-Feature: topology change detection and re-routing test No.3
+Feature: topology change detection and re-routing test No.4
 
   As a Trema user
   I want to control multiple openflow switches using routing_switch application
