@@ -16,6 +16,7 @@ class Topology
 
   def_delegator :@ports, :each_pair, :each_switch
   def_delegator :@links, :each, :each_link
+  def_delegators :@linkindex, :switch_endpoint, :link_between
 
 
   def initialize view, controller
@@ -75,16 +76,6 @@ class Topology
   end
 
 
-  def switch_endpoint
-    @linkindex.switch_endpoint
-  end
-
-
-  def link_between dpid1, dpid2
-    @linkindex.link_between dpid1, dpid2
-  end
-
-
   def path_between start, goal
     puts "[get_path], start:#{start.to_hex}, goal:#{goal.to_hex}"
 
@@ -94,10 +85,10 @@ class Topology
     remains = []
 
     # initialize
-    @ports.each_key do | each |
-      dist[each] = INFINITY_LINK_COST
-      pred[each] = nil
-      remains << each
+    each_switch do | dpid, ports |
+      dist[dpid] = INFINITY_LINK_COST
+      pred[dpid] = nil
+      remains << dpid
     end
     dist[start] = 0
 
