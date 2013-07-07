@@ -33,7 +33,7 @@ class ARPEntry
     @hwaddr = hwaddr
     @age_max = age_max
     @last_updated = Time.now
-    info "[ARPEntry::initialize] New entry: DPID=#{ @dpid }, MAC addr=#{ @hwaddr.to_s }, port=#{ @port }"
+    info "[ARPEntry::initialize] New entry: DPID=#{ @dpid.to_hex }, MAC addr=#{ @hwaddr.to_s }, port=#{ @port }"
   end
 
 

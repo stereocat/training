@@ -20,7 +20,7 @@ end
 
 When /^I turn up port (.+) on switch (.+)$/ do | port, switch |
   run "trema port_up --switch #{ switch } --port #{ port }"
-  sleep 3
+  sleep 6
 end
 
 When /^I kill switch (.+)$/ do | switch |
@@ -30,7 +30,7 @@ end
 
 When /^I boot switch (.+)$/ do | switch |
   run "trema up #{ switch }"
-  sleep 3
+  sleep 6
 end
 
 

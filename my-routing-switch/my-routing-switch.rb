@@ -14,6 +14,7 @@ require "flowindex"
 class MyRoutingSwitch < Controller
   periodic_timer_event :age_arp_table, 10
   periodic_timer_event :flood_lldp_frames, 30
+  periodic_timer_event :build_topology, 3
 
 
   def start
@@ -118,7 +119,7 @@ class MyRoutingSwitch < Controller
         path = flow_mod_to_path src_arp_entry.dpid, dst_arp_entry, each
         each.update_path path
       else
-        warn "NOT Found src and/or dst info in arp_table"
+        warn "NOT FOUND: src and/or dst info in arp_table"
       end
     end
   end
@@ -129,26 +130,34 @@ class MyRoutingSwitch < Controller
   ##############################################################################
 
 
+  def build_topology
+    @topology.build_path
+  end
+
+
   def flow_mod_to_path start_dpid, dst_arp_entry, packet_in
     goal_dpid = dst_arp_entry.dpid
     goal_port = dst_arp_entry.port
 
-    pred = @topology.path_between goal_dpid, start_dpid
-    now_dpid = start_dpid
     path = []
-
-    while pred[now_dpid]
-      path << now_dpid
-      next_dpid = pred[now_dpid]
-      link = @topology.link_between(now_dpid, next_dpid)
-      if link
-        puts "flow_mod: dpid:#{now_dpid.to_hex}/port:#{link.port1} -> dpid:#{next_dpid}"
-        flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
-        now_dpid = next_dpid
-      else
-        warn "[pred] link: not found"
-        break
+    pred = @topology.path_between goal_dpid, start_dpid
+    if pred
+      now_dpid = start_dpid
+      while pred[now_dpid]
+        path << now_dpid
+        next_dpid = pred[now_dpid]
+        link = @topology.link_between(now_dpid, next_dpid)
+        if link
+          puts "flow_mod: dpid:#{now_dpid.to_hex}/port:#{link.port1} -> dpid:#{next_dpid}"
+          flow_mod now_dpid, srcdst_match(packet_in), SendOutPort.new(link.port1)
+          now_dpid = next_dpid
+        else
+          warn "NOT FOUND: link between #{now_dpid.to_hex} and #{next_dpid.to_hex}"
+          break
+        end
       end
+    else
+      warn "NOT FOUND: pred, src/dst hosts are on same switch?"
     end
     # last hop
     flow_mod goal_dpid, dst_match(packet_in), SendOutPort.new(goal_port)
@@ -204,17 +213,21 @@ class MyRoutingSwitch < Controller
     if endpoint_ports
       if endpoint_ports[dpid]
         endpoint_ports.each_pair do |each_dpid, port_numbers|
-          actions = []
-          port_numbers.each do |each|
-            next if each_dpid == dpid and port == each
+          if @topology.has_path?(dpid, each_dpid)
+            actions = []
+            port_numbers.each do |each|
+              next if each_dpid == dpid and port == each
 
-            puts "FLOOD: action: dpid: #{each_dpid.to_hex}, SendOutPort: #{each}"
-            actions << SendOutPort.new(each)
+              puts "FLOOD: action: dpid: #{each_dpid.to_hex}, SendOutPort: #{each}"
+              actions << SendOutPort.new(each)
+            end
+            packet_out each_dpid, data, actions
+          else
+            warn "NOT FOUND: path from #{dpid.to_hex} to #{each_dpid.to_hex}, it seems separated env."
           end
-          packet_out each_dpid, data, actions
         end
       else
-        warn "DPID:#{dpid}, endpoint_ports NOT FOUND, it seems stand alone and FLOODing"
+        warn "NOT FOUND: endpoint_ports on #{dpid.to_hex}, it seems stand alone and Flooding"
         packet_out dpid, data, SendOutPort.new(OFPP_FLOOD)
       end
     else
@@ -260,18 +273,34 @@ class MyRoutingSwitch < Controller
     if dst_arp_entry
       # calculate path between src to dst, and write flows to path-switches
       path = flow_mod_to_path start_dpid, dst_arp_entry, packet_in
-      # if start_dpid == dst_arp_entry.dpid,
-      # src/dst hosts are connected to same switches and path is empty.
-      if path.empty? and ( start_dpid != dst_arp_entry.dpid )
-        # src/dst hosts are connected to different switche each other,
-        # but not found the path between src and dst.
-        warn "FOUND arp entry. But NOT FOUND: path from dpid:#{start_dpid.to_hex} to dpid:#{dst_arp_entry.dpid.to_hex}"
-      else
-        # packet_out from last-hop of path to destination host
+      on_same_switch = (start_dpid == dst_arp_entry.dpid ? true : false)
+
+      # case |on_same_switch | path.empty? | packet_out | flowindex.add
+      # -----|---------------+-------------+------------+---------------
+      # (1)  | true          | true        | DO         | DO NOT
+      # (2)  | true          | false       | DO NOT     | DO NOT
+      # (3)  | false         | true        | DO NOT     | DO NOT
+      # (4)  | false         | true        | DO         | DO
+
+      # (1) path is always empty if on same switch.
+      # (2) (improbable case)
+      # (3) src/dst hosts are not connected, it is separated env.
+      # (4) path exists, cache flow info.
+
+      if on_same_switch and ( not path.empty? )
+        # (2)
+        error "ERROR: topology error?"
+      elsif ( not on_same_switch ) and path.empty?
+        # (3)
+        warn "NOT FOUND: path from #{start_dpid.to_hex} to #{dst_arp_entry.dpid.to_hex}, it seems separated env."
+      elsif
+        # (1)(4)
         packet_out dst_arp_entry.dpid, packet_in.data, SendOutPort.new(dst_arp_entry.port)
-        # cache flow info
-        @flowindex.add_by_packet_in dpid, packet_in, path
-        @flowindex.dump
+        # (4)
+        if not on_same_switch
+          @flowindex.add_by_packet_in dpid, packet_in, path
+          @flowindex.dump
+        end
       end
     else
       # if the packet was not found in arp_table,

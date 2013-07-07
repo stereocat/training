@@ -5,6 +5,30 @@ require "trema-extensions/port"
 require "linkindex"
 
 #
+# topology change watcher,
+# it acts as observer of Topology
+#
+class TCWatcher
+
+  def initialize
+    @changed = false
+  end
+
+  def update topology
+    @changed = true
+  end
+
+  def updated?
+    @changed
+  end
+
+  def known
+    @changed = false
+  end
+
+end
+
+#
 # Topology information containing the list of known switches, ports,
 # and links.
 #
@@ -13,19 +37,24 @@ class Topology
   extend Forwardable
 
   INFINITY_LINK_COST = 99999
+  PRED_NONE = nil
 
   def_delegator :@ports, :each_pair, :each_switch
   def_delegator :@links, :each, :each_link
   def_delegators :@linkindex, :switch_endpoint, :link_between
-
+  def_delegators :@watcher, :updated?, :known
 
   def initialize view, controller
     @ports = Hash.new { [].freeze }
     @links = []
     @linkindex = LinkIndex.new
     @controller = controller
+    @watcher = TCWatcher.new
+    @pred = {}
+
     add_observer view
     add_observer @linkindex
+    add_observer @watcher
   end
 
 
@@ -71,7 +100,6 @@ class Topology
       @links.sort!
       changed
       notify_observers self
-      @controller.rewrite_flows
     end
   end
 
@@ -79,63 +107,63 @@ class Topology
   def path_between start, goal
     puts "[get_path], start:#{start.to_hex}, goal:#{goal.to_hex}"
 
-    # start/goal are dpid
+    return start == goal ? nil : @pred[start]
+  end
+
+
+  def has_path? start, goal
+    start == goal ? true : @pred[start][goal]
+  end
+
+
+  # calculate shortest path of all switch pair
+  # using "Floyd-Warshall" Algorithm
+  def build_path
+    return false if not @watcher.updated?
+
+    puts "Topology::build_path"
     dist = {}
-    pred = {}
-    remains = []
+    @pred.clear
 
-    # initialize
-    each_switch do | dpid, ports |
-      dist[dpid] = INFINITY_LINK_COST
-      pred[dpid] = nil
-      remains << dpid
-    end
-    dist[start] = 0
-
-    while not remains.empty?
-
-      # search node that has minimum distance in 'remines'
-      pd = {}
-      remains.each do | each |
-        pd[each] = dist[each] # projection
+    # initialize dist/pred table
+    each_switch do | dpid1, ports1 |
+      dist[dpid1] = {}
+      @pred[dpid1] = {}
+      each_switch do | dpid2, ports2 |
+        link = @linkindex.link_between dpid1, dpid2
+        if link
+          dist[dpid1][dpid2] = link.cost
+          @pred[dpid1][dpid2] = dpid1
+        else
+          dist[dpid1][dpid2] = INFINITY_LINK_COST
+          @pred[dpid1][dpid2] = PRED_NONE
+        end
       end
-      (base_dpid, base_dist) = pd.to_a.sort { |a, b| a[1] <=> b[1] }.shift
-      # fix minimum-distance node
-      remains.delete(base_dpid)
+      dist[dpid1][dpid1] = 0
+    end
 
-      # ## check
-      # puts "---------------:--------------------------"
-      # puts "remains        : [#{remains.join(", ")}]"
-      # puts "dist table     : {#{_pphash dist}}"
-      # puts "pred table     : {#{_pphash pred}}"
-      # puts "base (dist)    : #{base_dpid.to_hex} (#{base_dist.to_hex})"
-
-      # search neighbors
-      neighbors = @linkindex.neighbors_of(base_dpid)
-      if neighbors
-        neighbors.each do |each|
-          # check if neighbor was not fixed
-          if remains.include?(each)
-            # update neighbors distance
-            linkcost = @linkindex.link_between(base_dpid, each).cost
-            newdist = dist[base_dpid] + linkcost
-            if dist[each] > newdist
-              dist[each] = newdist
-              pred[each] = base_dpid
-            end
+    # calc dist/pred table
+    each_switch do | dpid_t, ports_t |
+      each_switch do | dpid1, ports1 |
+        each_switch do | dpid2, ports2 |
+          linkcost = dist[dpid1][dpid_t] + dist[dpid_t][dpid2]
+          if linkcost < dist[dpid1][dpid2]
+            dist[dpid1][dpid2] = linkcost
+            @pred[dpid1][dpid2] = @pred[dpid_t][dpid2]
           end
         end
-      else
-        warn "DPID:#{base_dpid} seems stand alone"
-        break
       end
-
-      # ## check
-      # puts "neighbors      : [#{neighbors.join(", ")}]"
-      # puts "next dist tbl  : {#{_pphash dist}}"
     end
 
-    return pred
+    # debug
+    puts "dist :"
+    _pphh dist
+    puts "pred :"
+    _pphh @pred
+
+    @controller.rewrite_flows
+    @watcher.known
+    return true
   end
 
 
@@ -161,10 +189,17 @@ class Topology
 
 
   # pretty-print of hash
-  def _pphash hash
+  def _pph hash
     str = ""
     hash.each_pair { |k,v| str = str + "#{k} => #{v}, " }
     return str
+  end
+
+  # pretty-print of double-hash
+  def _pphh hash
+    hash.each_pair do | dpid, h |
+      puts "#{dpid.to_hex} : #{_pph h}"
+    end
   end
 
 
