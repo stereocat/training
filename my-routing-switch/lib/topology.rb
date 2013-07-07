@@ -50,6 +50,8 @@ class Topology
     @linkindex = LinkIndex.new
     @controller = controller
     @watcher = TCWatcher.new
+
+    @dist = {}
     @pred = {}
 
     add_observer view
@@ -122,44 +124,44 @@ class Topology
     return false if not @watcher.updated?
 
     puts "Topology::build_path"
-    dist = {}
+    @dist.clear
     @pred.clear
 
     # initialize dist/pred table
     each_switch do | dpid1, ports1 |
-      dist[dpid1] = {}
+      @dist[dpid1] = {}
       @pred[dpid1] = {}
       each_switch do | dpid2, ports2 |
         link = @linkindex.link_between dpid1, dpid2
         if link
-          dist[dpid1][dpid2] = link.cost
+          @dist[dpid1][dpid2] = link.cost
           @pred[dpid1][dpid2] = dpid1
         else
-          dist[dpid1][dpid2] = INFINITY_LINK_COST
+          @dist[dpid1][dpid2] = INFINITY_LINK_COST
           @pred[dpid1][dpid2] = PRED_NONE
         end
       end
-      dist[dpid1][dpid1] = 0
+      @dist[dpid1][dpid1] = 0
     end
+
+    # debug print
+    _pptables "initial"
 
     # calc dist/pred table
     each_switch do | dpid_t, ports_t |
       each_switch do | dpid1, ports1 |
         each_switch do | dpid2, ports2 |
-          linkcost = dist[dpid1][dpid_t] + dist[dpid_t][dpid2]
-          if linkcost < dist[dpid1][dpid2]
-            dist[dpid1][dpid2] = linkcost
+          linkcost = @dist[dpid1][dpid_t] + @dist[dpid_t][dpid2]
+          if linkcost < @dist[dpid1][dpid2]
+            @dist[dpid1][dpid2] = linkcost
             @pred[dpid1][dpid2] = @pred[dpid_t][dpid2]
           end
         end
       end
-    end
 
-    # debug
-    puts "dist :"
-    _pphh dist
-    puts "pred :"
-    _pphh @pred
+      # debug print
+      _pptables "t=#{dpid_t.to_hex}"
+    end
 
     @controller.rewrite_flows
     @watcher.known
@@ -188,16 +190,26 @@ class Topology
   end
 
 
+  # pretty-print of dist/pred table
+  def _pptables str
+    puts "---------------------"
+    puts str
+    puts "dist :"
+    _pphh @dist
+    puts "pred :"
+    _pphh @pred
+  end
+
   # pretty-print of hash
   def _pph hash
     str = ""
-    hash.each_pair { |k,v| str = str + "#{k} => #{v}, " }
+    hash.sort.each { |k,v| str = str + sprintf("%x=>%6s, ", k, v) }
     return str
   end
 
   # pretty-print of double-hash
   def _pphh hash
-    hash.each_pair do | dpid, h |
+    hash.sort.each do | dpid, h |
       puts "#{dpid.to_hex} : #{_pph h}"
     end
   end
