@@ -5,30 +5,6 @@ require "trema-extensions/port"
 require "linkindex"
 
 #
-# topology change watcher,
-# it acts as observer of Topology
-#
-class TCWatcher
-
-  def initialize
-    @changed = false
-  end
-
-  def update topology
-    @changed = true
-  end
-
-  def updated?
-    @changed
-  end
-
-  def known
-    @changed = false
-  end
-
-end
-
-#
 # Topology information containing the list of known switches, ports,
 # and links.
 #
@@ -41,22 +17,19 @@ class Topology
 
   def_delegator :@ports, :each_pair, :each_switch
   def_delegator :@links, :each, :each_link
-  def_delegators :@linkindex, :switch_endpoint, :link_between
-  def_delegators :@watcher, :updated?, :known
+  def_delegators :@linkindex, :switch_endpoint, :link_between, :updated?, :known
 
   def initialize view, controller
     @ports = Hash.new { [].freeze }
     @links = []
     @linkindex = LinkIndex.new
     @controller = controller
-    @watcher = TCWatcher.new
 
     @dist = {}
     @pred = {}
 
     add_observer view
     add_observer @linkindex
-    add_observer @watcher
   end
 
 
@@ -121,7 +94,7 @@ class Topology
   # calculate shortest path of all switch pair
   # using "Floyd-Warshall" Algorithm
   def build_path
-    return false if not @watcher.updated?
+    return false if not @linkindex.updated?
 
     puts "Topology::build_path"
     @dist.clear
@@ -164,7 +137,7 @@ class Topology
     end
 
     @controller.rewrite_flows
-    @watcher.known
+    @linkindex.known
     return true
   end
 
@@ -203,7 +176,7 @@ class Topology
   # pretty-print of hash
   def _pph hash
     str = ""
-    hash.sort.each { |k,v| str = str + sprintf("%x=>%6s, ", k, v) }
+    hash.sort.each { | k, v | str = str + sprintf("%x=>%6s, ", k, v) }
     return str
   end
 

@@ -13,6 +13,7 @@ class LinkIndex
     @switch_index = {}
     @switch_neighbor = {}
     @switch_endpoint = {}
+    @changed = false
   end
 
 
@@ -23,7 +24,7 @@ class LinkIndex
     @switch_neighbor.clear
     @switch_endpoint.clear
 
-    topology.each_switch do |dpid, ports|
+    topology.each_switch do | dpid, ports |
       @switch_index[dpid] = {}
       ports.each do |each|
         # puts "add port_obj to index: dpid:#{dpid.to_hex}, port:#{each.number}"
@@ -40,11 +41,11 @@ class LinkIndex
       # puts "  num:#{@switch_index[each.dpid1][each.port1][:link_obj].port1}"
     end
 
-    @switch_index.each_key do |dpid|
+    @switch_index.each_key do | dpid |
       @switch_neighbor[dpid] = []
       @switch_endpoint[dpid] = []
 
-      @switch_index[dpid].each_key do |port_number|
+      @switch_index[dpid].each_key do | port_number |
         if @switch_index[dpid][port_number][:link_obj]
           link = @switch_index[dpid][port_number][:link_obj]
           @switch_neighbor[dpid].push(link.dpid2)
@@ -55,11 +56,12 @@ class LinkIndex
     end
 
     # dump
+    @changed = true
   end
 
 
   def link_between dpid1, dpid2
-    @switch_index[dpid1].each_key do |each|
+    @switch_index[dpid1].each_key do | each |
       if @switch_index[dpid1][each][:link_obj]
         link = @switch_index[dpid1][each][:link_obj]
         return link if link.dpid2 == dpid2
@@ -81,9 +83,9 @@ class LinkIndex
   def dump
     puts "[LinkIndex::dump]"
 
-    @switch_index.each_key do |dpid|
+    @switch_index.each_key do | dpid |
       puts "dpid: #{dpid.to_hex}"
-      @switch_index[dpid].each_key do |each|
+      @switch_index[dpid].each_key do | each |
         port = @switch_index[dpid][each][:port_obj]
         link = @switch_index[dpid][each][:link_obj] ? @switch_index[dpid][each][:link_obj] : false
         puts "  port_number: #{each}"
@@ -99,6 +101,16 @@ class LinkIndex
 
   def neighbors_of dpid
     @switch_neighbor[dpid]
+  end
+
+
+  def updated?
+    @changed
+  end
+
+
+  def known
+    @changed = false
   end
 
 
