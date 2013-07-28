@@ -2,20 +2,32 @@ require "lldp"
 
 
 class Link
+  include Trema::DefaultLogger
+
   attr_reader :dpid1
   attr_reader :dpid2
   attr_reader :port1
   attr_reader :port2
   attr_reader :cost
+  attr_writer :age_max
 
 
-  def initialize dpid, packet_in
+  def initialize dpid, packet_in, cost, age_max
     lldp = Lldp.read( packet_in.data )
     @dpid1 = lldp.dpid
     @dpid2 = dpid
     @port1 = lldp.port_number
     @port2 = packet_in.in_port
-    @cost = 10 # default link cost
+    @cost = cost
+    @age_max = age_max
+    @last_updated = Time.now
+  end
+
+
+  def aged_out?
+    aged_out = Time.now - @last_updated > @age_max
+    info "[Link::aged_out?] Age out: An Link entry, [#{@dpid1.to_hex}/#{@port1} - #{@dpid2.to_hex}/#{@port2}] has been aged-out" if aged_out
+    aged_out
   end
 
 
@@ -41,6 +53,14 @@ class Link
     ( ( @dpid1 == dpid ) and ( @port1 == port ) ) or
       ( ( @dpid2 == dpid ) and ( @port2 == port ) )
   end
+
+
+  def update
+    # puts "Link::update] link: #{self.to_s} updated."
+    @last_updated = Time.now
+  end
+
+
 end
 
 

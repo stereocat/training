@@ -12,6 +12,8 @@ class Topology
   include Observable
   extend Forwardable
 
+  LINK_ENTRY_MAX_AGE = 5
+  DEFAULT_LINK_COST = 10
   INFINITY_LINK_COST = 99999
   PRED_NONE = nil
 
@@ -67,9 +69,11 @@ class Topology
   def add_link_by dpid, packet_in
     raise "Not an LLDP packet!" if not packet_in.lldp?
 
-    link = Link.new( dpid, packet_in )
+    link = Link.new( dpid, packet_in, DEFAULT_LINK_COST, LINK_ENTRY_MAX_AGE )
 
-    if not @links.include?( link )
+    if @links.include?( link )
+      @links.each { | each | each.update if each == link }
+    else
       puts "add link: #{link.dpid1.to_hex}/#{link.port1} - #{link.dpid2.to_hex}/#{link.port2}"
       @links << link
       @links.sort!
@@ -139,6 +143,19 @@ class Topology
     @controller.rewrite_flows
     @linkindex.known
     return true
+  end
+
+
+  def age_links
+    @links.each do |each|
+      if each.aged_out?
+        puts "[Topology::age_links], link: #{each.to_s} aged-out"
+        @links -= [ each ]
+        changed
+      end
+    end
+
+    notify_observers self
   end
 
 

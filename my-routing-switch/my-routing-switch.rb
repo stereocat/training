@@ -12,8 +12,8 @@ require "arp-table"
 require "flowindex"
 
 class MyRoutingSwitch < Controller
-  periodic_timer_event :age_arp_table, 10
-  periodic_timer_event :flood_lldp_frames, 30
+  periodic_timer_event :age_tables, 10
+  periodic_timer_event :flood_lldp_frames, 5
   periodic_timer_event :build_topology, 3
 
 
@@ -59,6 +59,16 @@ class MyRoutingSwitch < Controller
     info "[MyRoutingSwitch::port_status] switch:#{dpid.to_hex}"
 
     updated_port = port_status.port
+
+    # debug
+    puts "- port number    : #{ updated_port.number }"
+    puts "- port name      : #{ updated_port.name }"
+    puts "- port local?    : #{ updated_port.local? }"
+    puts "- port link_down?: #{ updated_port.link_down? }"
+    puts "- port link_up?  : #{ updated_port.link_up? }"
+    puts "- port port_down?: #{ updated_port.port_down? }"
+    puts "- port port_up?  : #{ updated_port.port_up? }"
+
     return if updated_port.local?
 
     @topology.update_port dpid, updated_port
@@ -280,7 +290,7 @@ class MyRoutingSwitch < Controller
       # (1)  | true          | true        | DO         | DO NOT
       # (2)  | true          | false       | DO NOT     | DO NOT
       # (3)  | false         | true        | DO NOT     | DO NOT
-      # (4)  | false         | true        | DO         | DO
+      # (4)  | false         | false       | DO         | DO
 
       # (1) path is always empty if on same switch.
       # (2) (improbable case)
@@ -392,8 +402,9 @@ class MyRoutingSwitch < Controller
   end
 
 
-  def age_arp_table
+  def age_tables
     @arp_table.age
+    @topology.age_links
   end
 
 
