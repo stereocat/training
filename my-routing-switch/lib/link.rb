@@ -1,4 +1,5 @@
-require "lldp"
+require "rubygems"
+require "pio/lldp"
 
 
 class Link
@@ -13,10 +14,10 @@ class Link
 
 
   def initialize dpid, packet_in, cost, age_max
-    lldp = Lldp.read( packet_in.data )
-    @dpid1 = lldp.dpid
+    lldp = Pio::Lldp.read( packet_in.data )
+    @dpid1 = lldp.dpid.to_i
     @dpid2 = dpid
-    @port1 = lldp.port_number
+    @port1 = lldp.port_number.to_i
     @port2 = packet_in.in_port
     @cost = cost
     @age_max = age_max

@@ -26,8 +26,8 @@ class LinkIndex
 
     topology.each_switch do | dpid, ports |
       @switch_index[dpid] = {}
-      ports.each do |each|
-        # puts "add port_obj to index: dpid:#{dpid.to_hex}, port:#{each.number}"
+      ports.each do | each |
+        # puts "add port_obj to index: dpid:#{dpid.to_hex}(#{dpid.class}), port:#{each.number}(#{each.number.class})"
         @switch_index[dpid][each.number] = {}
         @switch_index[dpid][each.number][:port_obj] = each
         # puts "  num:#{@switch_index[dpid][each.number][:port_obj].number}"
@@ -35,9 +35,17 @@ class LinkIndex
     end
     # always dpid/ports set is larger than dpid/links
     # if exists link_obj, then the port(link) is switch-to-switch
-    topology.each_link do |each|
-      # puts "add link_obj to index: dpid:#{each.dpid1.to_hex}, port:#{each.port1}"
-      @switch_index[each.dpid1][each.port1][:link_obj] = each
+    topology.each_link do | each |
+      # puts "add link_obj to index: dpid:#{each.dpid1.to_hex}(#{each.dpid1.class}), port:#{each.port1}(#{each.port1.class})"
+      if @switch_index[each.dpid1]
+        if @switch_index[each.dpid1][each.port1]
+          @switch_index[each.dpid1][each.port1][:link_obj] = each
+        else
+          puts "[LinkIndex::Update] unknown port: #{ each.dpid1.to_hex }/#{ each.port1 }"
+        end
+      else
+        puts "[LinkIndex::Update] unknown dpid: #{ each.dpid1.to_hex }"
+      end
       # puts "  num:#{@switch_index[each.dpid1][each.port1][:link_obj].port1}"
     end
 
