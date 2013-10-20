@@ -2,3 +2,10 @@ access-list 1 permit 192.168.1.0   0.0.0.63
 access-list 1 deny   192.168.1.64  0.0.0.63
 access-list 1 permit 192.168.1.128 0.0.0.63
 access-list 1 deny   192.168.1.192 0.0.0.63
+!
+ip access-list extended infilter2
+ permit tcp host 192.168.1.3 host 192.168.2.10 eq www
+ deny   udp any host 192.168.2.10 eq 80
+ permit tcp 192.168.1.128 0.0.0.127 192.168.2.0 0.0.0.255 eq 80
+ permit udp 192.168.1.0   0.0.0.63  192.168.2.0 0.0.0.255 eq echo
+!

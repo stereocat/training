@@ -21,7 +21,7 @@ $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
 
 require "arp-table"
 require "routing-table"
-require "cisco-acl-intp"
+require "cisco_acl_intp"
 
 class Interface
   include CiscoAclIntp
@@ -42,7 +42,7 @@ class Interface
 
     puts "#### port: #{ options[ :port ] }"
     if options[ :filter_file ] && options[ :infilter ]
-      parser_opts = {}
+      parser_opts = { :color => true }
       parser = CiscoAclIntp::Parser.new( parser_opts )
 
       parser.parse_file( options[ :filter_file ] )

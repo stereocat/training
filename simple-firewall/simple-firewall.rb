@@ -36,6 +36,11 @@ class SimpleFirewall < Controller
   end
 
 
+  def switch_ready dpid
+    info "[SimpleFirewall::ready]: #{ dpid.to_hex }"
+  end
+
+
   def packet_in( dpid, message )
     return if not to_me?( message )
 
@@ -91,15 +96,15 @@ class SimpleFirewall < Controller
         :dst_ip => message.ipv4_daddr.to_s
       }
       if message.tcp?
-        opts[ :protocol => "tcp" ]
-        opts[ :src_port => message.tcp_src_port ]
-        opts[ :dst_port => message.tcp_dst_port ]
+        opts[ :protocol ] = "tcp"
+        opts[ :src_port ] = message.tcp_src_port
+        opts[ :dst_port ] = message.tcp_dst_port
       elsif message.udp?
-        opts[ :protocol => "udp" ]
-        opts[ :src_port => message.udp_src_port ]
-        opts[ :dst_port => message.udp_dst_port ]
+        opts[ :protocol ] = "udp"
+        opts[ :src_port ] = message.udp_src_port
+        opts[ :dst_port ] = message.udp_dst_port
       elsif message.icmpv4?
-        opts[ :protocol => "icmp" ]
+        opts[ :protocol ] = "icmp"
       end
 
       ace = infilter.search_ace( opts )
@@ -125,7 +130,7 @@ class SimpleFirewall < Controller
 
   def handle_ipv4( dpid, message )
     if filtered?( dpid, message )
-      ## TBD ## if denied, drop rule send to OVS
+      # if denied, drop rule send to OVS
       send_drop_flow_mod( dpid, message )
       return
     end
@@ -142,6 +147,7 @@ class SimpleFirewall < Controller
 
 
   def should_forward?( message )
+    # info "[SimpleFirewall::should_forward?]"
     not @interfaces.find_by_ipaddr( message.ipv4_daddr )
   end
 
@@ -160,6 +166,7 @@ class SimpleFirewall < Controller
 
 
   def forward( dpid, message )
+    # info "[SimpleFirewall::forward]"
     next_hop = resolve_next_hop( message.ipv4_daddr )
 
     interface = @interfaces.find_by_prefix( next_hop )
@@ -200,6 +207,7 @@ class SimpleFirewall < Controller
 
 
   def packet_out( dpid, packet, action )
+    # info "[SimpleFirewall::packet_out] #{ dpid.to_hex }"
     send_packet_out(
       dpid,
       :data => packet,
@@ -209,7 +217,7 @@ class SimpleFirewall < Controller
 
 
   def send_drop_flow_mod dpid, packet_in
-    info "[Simple_firewall::send_drop_flow_mod]"
+    # info "[SimpleFirewall::send_drop_flow_mod]"
     send_flow_mod_add(
       dpid,
       :idle_timeout => 60,
@@ -238,6 +246,7 @@ class SimpleFirewall < Controller
   end
 
   def handle_unresolved_packet( dpid, message, interface, ipaddr )
+    info "[SimpleFirewall::handle_unresolved_packet]"
     arp_request = create_arp_request_from( interface, ipaddr )
     packet_out dpid, arp_request, SendOutPort.new( interface.port )
   end
