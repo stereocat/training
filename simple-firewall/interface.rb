@@ -21,7 +21,7 @@ $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
 
 require "arp-table"
 require "routing-table"
-require "CiscoAclIntp"
+require "cisco-acl-intp"
 
 class Interface
   include CiscoAclIntp
